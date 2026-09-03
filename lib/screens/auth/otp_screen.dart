@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
+import 'package:app_mobile_music_underground/services/auth_service.dart';
 
 /// Écran de vérification OTP — Zik237
-/// Affiché après l'inscription pour confirmer l'email ou le numéro de téléphone.
-/// Reçoit en paramètre le contact (email ou téléphone) auquel le code a été envoyé.
+/// Branché sur AuthService avec Supabase.
 
 class OtpScreen extends StatefulWidget {
-  final String contact; // email ou numéro de téléphone
-  final bool isEmail;   // true = email, false = téléphone
+  final String contact;
+  final bool isEmail;
 
   const OtpScreen({
     super.key,
@@ -23,7 +23,7 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  // 6 champs OTP
+  final _authService = AuthService();
   final List<TextEditingController> _controllers =
   List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes =
@@ -38,7 +38,6 @@ class _OtpScreenState extends State<OtpScreen> {
   void initState() {
     super.initState();
     _startCountdown();
-    // Focus automatique sur le premier champ
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
     });
@@ -52,7 +51,6 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  // ── Compte à rebours pour renvoyer le code ──
   void _startCountdown() {
     setState(() {
       _canResend = false;
@@ -69,39 +67,65 @@ class _OtpScreenState extends State<OtpScreen> {
     });
   }
 
-  // ── Code OTP complet ──
-  String get _otpCode =>
-      _controllers.map((c) => c.text).join();
+  String get _otpCode => _controllers.map((c) => c.text).join();
+  bool get _isOtpComplete => _controllers.every((c) => c.text.isNotEmpty);
 
-  bool get _isOtpComplete =>
-      _controllers.every((c) => c.text.isNotEmpty);
-
-  // ── Vérifier le code ──
+  // ── Vérification OTP ────────────────────────────────────────────────────
   Future<void> _handleVerify() async {
     if (!_isOtpComplete) {
       _showSnackBar('Merci de saisir les 6 chiffres du code');
       return;
     }
+
     setState(() => _isLoading = true);
-    // TODO: remplacer par AuthService.verifyOtp(
-    //   contact: widget.contact,
-    //   code: _otpCode,
-    // )
-    await Future.delayed(const Duration(seconds: 2));
+
+    final error = await _authService.verifyOtp(
+      contact: widget.contact,
+      code: _otpCode,
+      isEmail: widget.isEmail,
+    );
+
     setState(() => _isLoading = false);
-    // TODO: si succès → context.go('/home') ou context.go('/register-artiste')
-    // selon le rôle choisi lors de l'inscription
+
+    if (!mounted) return;
+
+    if (error != null) {
+      _showSnackBar(error);
+      // Vider les champs en cas d'erreur
+      for (final c in _controllers) c.clear();
+      _focusNodes[0].requestFocus();
+    } else {
+      // Succès → rediriger selon le rôle
+      final role = await _authService.getUserRole();
+      if (!mounted) return;
+      _showSnackBar('Compte vérifié avec succès !');
+      if (role == 'artiste') {
+        // TODO: context.go('/dashboard') avec GoRouter
+      } else {
+        // TODO: context.go('/decouverte') avec GoRouter
+      }
+    }
   }
 
-  // ── Renvoyer le code ──
+  // ── Renvoyer le code ────────────────────────────────────────────────────
   Future<void> _handleResend() async {
     if (!_canResend) return;
-    // TODO: AuthService.resendOtp(contact: widget.contact)
-    _startCountdown();
-    _showSnackBar('Code renvoyé sur ${widget.contact}');
-    // Vider les champs
-    for (final c in _controllers) c.clear();
-    _focusNodes[0].requestFocus();
+
+    final error = await _authService.resendOtp(
+      contact: widget.contact,
+      isEmail: widget.isEmail,
+    );
+
+    if (!mounted) return;
+
+    if (error != null) {
+      _showSnackBar(error);
+    } else {
+      _startCountdown();
+      _showSnackBar('Code renvoyé sur ${_maskedContact(widget.contact)}');
+      for (final c in _controllers) c.clear();
+      _focusNodes[0].requestFocus();
+    }
   }
 
   void _showSnackBar(String message) {
@@ -110,12 +134,46 @@ class _OtpScreenState extends State<OtpScreen> {
         content: Text(message),
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
 
   void _goBack() => Navigator.of(context).pop();
+
+  void _onOtpFieldChanged(String value, int index) {
+    if (value.isNotEmpty) {
+      if (index < 5) {
+        _focusNodes[index + 1].requestFocus();
+      } else {
+        _focusNodes[index].unfocus();
+        if (_isOtpComplete) _handleVerify();
+      }
+    }
+    setState(() {});
+  }
+
+  void _onBackspace(int index) {
+    if (_controllers[index].text.isEmpty && index > 0) {
+      _controllers[index - 1].clear();
+      _focusNodes[index - 1].requestFocus();
+    }
+  }
+
+  String _maskedContact(String contact) {
+    if (widget.isEmail) {
+      final parts = contact.split('@');
+      if (parts.length != 2) return contact;
+      final name = parts[0];
+      if (name.length <= 2) return contact;
+      return '${name[0]}${'*' * (name.length - 2)}${name[name.length - 1]}@${parts[1]}';
+    } else {
+      if (contact.length < 4) return contact;
+      return '${'X' * (contact.length - 2)}${contact.substring(contact.length - 2)}';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +204,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Sous-titre avec contact masqué
+                  // Sous-titre
                   RichText(
                     text: TextSpan(
                       text: 'Un code à 6 chiffres a été envoyé à ',
@@ -168,7 +226,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // ── CHAMPS OTP ──
+                  // Champs OTP
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(
@@ -184,7 +242,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // ── BOUTON VÉRIFIER ──
+                  // Bouton vérifier
                   AppPrimaryButton(
                     label: 'Vérifier',
                     isLoading: _isLoading,
@@ -192,7 +250,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── RENVOYER LE CODE ──
+                  // Renvoyer le code
                   Center(
                     child: _canResend
                         ? GestureDetector(
@@ -227,7 +285,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // ── CHANGER DE CONTACT ──
+                  // Changer de contact
                   Center(
                     child: GestureDetector(
                       onTap: _goBack,
@@ -249,48 +307,9 @@ class _OtpScreenState extends State<OtpScreen> {
       ),
     );
   }
-
-  // ── Gestion de la saisie OTP ──
-  void _onOtpFieldChanged(String value, int index) {
-    if (value.isNotEmpty) {
-      // Passer au champ suivant
-      if (index < 5) {
-        _focusNodes[index + 1].requestFocus();
-      } else {
-        // Dernier champ → fermer le clavier
-        _focusNodes[index].unfocus();
-        // Vérifier automatiquement si complet
-        if (_isOtpComplete) _handleVerify();
-      }
-    }
-    setState(() {}); // Mettre à jour l'état visuel
-  }
-
-  void _onBackspace(int index) {
-    if (_controllers[index].text.isEmpty && index > 0) {
-      _controllers[index - 1].clear();
-      _focusNodes[index - 1].requestFocus();
-    }
-  }
-
-  // ── Masquer partiellement le contact ──
-  String _maskedContact(String contact) {
-    if (widget.isEmail) {
-      // exemple : p***e@gmail.com
-      final parts = contact.split('@');
-      if (parts.length != 2) return contact;
-      final name = parts[0];
-      if (name.length <= 2) return contact;
-      return '${name[0]}${'*' * (name.length - 2)}${name[name.length - 1]}@${parts[1]}';
-    } else {
-      // exemple : 6XX XXX X89
-      if (contact.length < 4) return contact;
-      return '${'X' * (contact.length - 2)}${contact.substring(contact.length - 2)}';
-    }
-  }
 }
 
-// ─── HEADER OTP ──────────────────────────────────────────────────────────────
+// ─── HEADER ──────────────────────────────────────────────────────────────────
 class _OtpHeader extends StatelessWidget {
   final VoidCallback onBack;
   const _OtpHeader({required this.onBack});
@@ -322,9 +341,9 @@ class _OtpHeader extends StatelessWidget {
           ),
           Positioned(
             top: 54, left: 56,
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Zik237',
                   style: TextStyle(
@@ -346,7 +365,6 @@ class _OtpHeader extends StatelessWidget {
               ],
             ),
           ),
-          // Icône OTP
           Positioned(
             top: 54, right: 24,
             child: Container(
@@ -368,7 +386,6 @@ class _OtpHeader extends StatelessWidget {
   }
 }
 
-// ─── WAVE CLIPPER OTP ────────────────────────────────────────────────────────
 class _OtpWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -388,7 +405,7 @@ class _OtpWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(_OtpWaveClipper oldClipper) => false;
 }
 
-// ─── CHAMP OTP INDIVIDUEL ────────────────────────────────────────────────────
+// ─── CHAMP OTP ───────────────────────────────────────────────────────────────
 class _OtpField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;

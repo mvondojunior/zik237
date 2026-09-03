@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/core/app_text_field.dart';
+import 'package:app_mobile_music_underground/core/app_constants.dart';
+import 'package:app_mobile_music_underground/services/auth_service.dart';
+import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
+import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
 
 /// Écran de connexion — Zik237
-/// Utilise uniquement les composants de core/ pour rester propre et maintenable.
+/// Branché sur AuthService avec Supabase.
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _authService = AuthService();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -26,23 +31,74 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // ── Connexion email / mot de passe ──────────────────────────────────────
   Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showSnackBar('Merci de remplir tous les champs');
+      return;
+    }
+
     setState(() => _isLoading = true);
-    // TODO: remplacer par AuthService.signIn(email, password)
-    await Future.delayed(const Duration(seconds: 2));
+
+    final error = await _authService.signIn(
+      email: email,
+      password: password,
+    );
+
     setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (error != null) {
+      _showSnackBar(error);
+    } else {
+      // Rediriger selon le rôle
+      final role = await _authService.getUserRole();
+      if (!mounted) return;
+      if (role == 'artiste') {
+        // TODO: context.go('/dashboard') avec GoRouter
+      } else {
+        // TODO: context.go('/decouverte') avec GoRouter
+      }
+    }
   }
 
-  void _handleGoogleSignIn() {
-    // TODO: Google Sign-In via Supabase
+  // ── Connexion Google ────────────────────────────────────────────────────
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    final error = await _authService.signInWithGoogle();
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+    if (error != null) _showSnackBar(error);
   }
 
+  // ── Navigation ─────────────────────────────────────────────────────────
   void _goToRegister() {
-    // TODO: context.go('/register') avec GoRouter
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
   }
 
   void _goToForgotPassword() {
-    // TODO: context.go('/forgot-password') avec GoRouter
+    // TODO: Navigator.of(context).push(
+    //   MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+    // );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.violetDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override
@@ -52,10 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ── HEADER ──────────────────────────────────────────────────
+            // ── HEADER ────────────────────────────────────────────────
             const _LoginHeader(),
 
-            // ── FORMULAIRE ──────────────────────────────────────────────
+            // ── FORMULAIRE ────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
               child: Column(
@@ -188,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// ─── HEADER ─────────────────────────────────────────────────────────────────
+// ─── HEADER ──────────────────────────────────────────────────────────────────
 class _LoginHeader extends StatelessWidget {
   const _LoginHeader();
 
@@ -219,15 +275,28 @@ class _LoginHeader extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.music_note_rounded,
-                    color: Colors.white, size: 24,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text('Bienvenue sur',
-                    style: TextStyle(fontSize: 12, color: Colors.white70, letterSpacing: 1.2)),
-                const Text('Zik237',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600,
-                        color: Colors.white, letterSpacing: -0.5)),
+                const Text(
+                  'Bienvenue sur',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white70,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const Text(
+                  'Zik237',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -237,7 +306,7 @@ class _LoginHeader extends StatelessWidget {
   }
 }
 
-// ─── WAVE CLIPPER ────────────────────────────────────────────────────────────
+// ─── WAVE CLIPPER ─────────────────────────────────────────────────────────────
 class _WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

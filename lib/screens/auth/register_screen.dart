@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/core/app_text_field.dart';
+import 'package:app_mobile_music_underground/services/auth_service.dart';
+import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
+import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
 
 /// Écran d'inscription — Zik237
-/// L'utilisateur choisit son rôle (Auditeur ou Artiste),
-/// renseigne ses informations et crée son compte.
+/// Branché sur AuthService avec Supabase.
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,6 +17,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _authService = AuthService();
   final _nomController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -23,20 +26,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-  String _selectedRole = 'auditeur'; // 'auditeur' ou 'artiste'
+  String _selectedRole = 'auditeur';
   String? _selectedVille;
 
   final List<String> _villes = [
-    'Yaoundé',
-    'Douala',
-    'Bafoussam',
-    'Bamenda',
-    'Garoua',
-    'Maroua',
-    'Ngaoundéré',
-    'Bertoua',
-    'Ebolowa',
-    'Kribi',
+    'Yaoundé', 'Douala', 'Bafoussam', 'Bamenda',
+    'Garoua', 'Maroua', 'Ngaoundéré', 'Bertoua',
+    'Ebolowa', 'Kribi',
   ];
 
   @override
@@ -48,34 +44,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // ── Inscription ──────────────────────────────────────────────────────────
   Future<void> _handleRegister() async {
-    // Validation basique
-    if (_nomController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+    final nom = _nomController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+
+    // Validations
+    if (nom.isEmpty || email.isEmpty || password.isEmpty || confirm.isEmpty) {
       _showSnackBar('Merci de remplir tous les champs');
       return;
     }
-    if (_passwordController.text != _confirmPasswordController.text) {
+    if (password != confirm) {
       _showSnackBar('Les mots de passe ne correspondent pas');
       return;
     }
-    if (_passwordController.text.length < 8) {
+    if (password.length < 8) {
       _showSnackBar('Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    if (!email.contains('@')) {
+      _showSnackBar('Adresse email invalide');
       return;
     }
 
     setState(() => _isLoading = true);
-    // TODO: remplacer par AuthService.signUp(
-    //   email: _emailController.text,
-    //   password: _passwordController.text,
-    //   nom: _nomController.text,
-    //   role: _selectedRole,
-    //   ville: _selectedVille,
-    // )
-    await Future.delayed(const Duration(seconds: 2));
+
+    final error = await _authService.signUp(
+      email: email,
+      password: password,
+      nomAffichage: nom,
+      role: _selectedRole,
+      ville: _selectedVille,
+    );
+
     setState(() => _isLoading = false);
-    // TODO: rediriger vers OtpScreen pour vérification
+
+    if (!mounted) return;
+
+    if (error != null) {
+      _showSnackBar(error);
+    } else {
+      // Succès → naviguer vers OTP
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => OtpScreen(
+            contact: email,
+            isEmail: true,
+          ),
+        ),
+      );
+    }
   }
 
   void _showSnackBar(String message) {
@@ -84,20 +104,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         content: Text(message),
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
 
-  void _goBack() {
-    // TODO: context.pop() avec GoRouter
-    Navigator.of(context).pop();
-  }
+  void _goBack() => Navigator.of(context).pop();
 
-  void _goToLogin() {
-    // TODO: context.go('/login') avec GoRouter
-    Navigator.of(context).pop();
-  }
+  void _goToLogin() => Navigator.of(context).pop();
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // ── CHOIX DU RÔLE ──
+                  // Choix du rôle
                   const Text(
                     'Tu es...',
                     style: TextStyle(
@@ -133,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 22),
 
-                  // ── NOM D'AFFICHAGE ──
+                  // Nom d'affichage
                   const AppInputLabel(label: "Nom d'affichage"),
                   const SizedBox(height: 6),
                   AppTextField(
@@ -144,8 +160,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── EMAIL ──
-                  const AppInputLabel(label: 'Email ou téléphone'),
+                  // Email
+                  const AppInputLabel(label: 'Email'),
                   const SizedBox(height: 6),
                   AppTextField(
                     controller: _emailController,
@@ -155,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── MOT DE PASSE ──
+                  // Mot de passe
                   const AppInputLabel(label: 'Mot de passe'),
                   const SizedBox(height: 6),
                   AppTextField(
@@ -177,7 +193,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── CONFIRMER MOT DE PASSE ──
+                  // Confirmer mot de passe
                   const AppInputLabel(label: 'Confirmer le mot de passe'),
                   const SizedBox(height: 6),
                   AppTextField(
@@ -200,7 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── VILLE ──
+                  // Ville
                   const AppInputLabel(label: 'Ta ville'),
                   const SizedBox(height: 6),
                   _VilleDropdown(
@@ -211,7 +227,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── BOUTON CRÉER COMPTE ──
+                  // Bouton créer compte
                   AppPrimaryButton(
                     label: 'Créer mon compte',
                     isLoading: _isLoading,
@@ -219,7 +235,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── CONDITIONS D'UTILISATION ──
+                  // Conditions d'utilisation
                   Center(
                     child: RichText(
                       textAlign: TextAlign.center,
@@ -244,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // ── LIEN CONNEXION ──
+                  // Lien connexion
                   Center(
                     child: GestureDetector(
                       onTap: _goToLogin,
@@ -308,11 +324,11 @@ class _RegisterHeader extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 54, left: 56,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Zik237',
                   style: TextStyle(
@@ -340,7 +356,6 @@ class _RegisterHeader extends StatelessWidget {
   }
 }
 
-// ─── WAVE CLIPPER REGISTER ───────────────────────────────────────────────────
 class _RegisterWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -362,7 +377,7 @@ class _RegisterWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(_RegisterWaveClipper oldClipper) => false;
 }
 
-// ─── SÉLECTEUR DE RÔLE ──────────────────────────────────────────────────────
+// ─── SÉLECTEUR DE RÔLE ───────────────────────────────────────────────────────
 class _RoleSelector extends StatelessWidget {
   final String selectedRole;
   final ValueChanged<String> onRoleChanged;
@@ -428,18 +443,14 @@ class _RoleCard extends StatelessWidget {
               Icon(
                 icon,
                 size: 24,
-                color: isSelected
-                    ? AppColors.violetDark
-                    : AppColors.textMuted,
+                color: isSelected ? AppColors.violetDark : AppColors.textMuted,
               ),
               const SizedBox(height: 6),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: isSelected
-                      ? FontWeight.w600
-                      : FontWeight.w400,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected
                       ? AppColors.violetDark
                       : AppColors.textSecondary,
