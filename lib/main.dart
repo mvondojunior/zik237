@@ -4,6 +4,7 @@ import 'package:app_mobile_music_underground/services/auth_service.dart';
 import 'package:app_mobile_music_underground/screens/auth/login_screen.dart';
 import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
 import 'package:app_mobile_music_underground/core/app_constants.dart';
+import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => RegisterScreen(),
+        '/': (context) => LoginScreen(),
+        '/Register':(context) => RegisterScreen(),
+        '/otp':(context) => OtpScreen(contact: '',),
       },
     );
   }
