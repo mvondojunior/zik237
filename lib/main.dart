@@ -1,3 +1,4 @@
+import 'package:app_mobile_music_underground/screens/auditeur/recherche_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
@@ -5,6 +6,8 @@ import 'package:app_mobile_music_underground/screens/auth/login_screen.dart';
 import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
 import 'package:app_mobile_music_underground/core/app_constants.dart';
 import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
+import 'package:app_mobile_music_underground/screens/splashscreen/splashscreen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/decouverte_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,9 +29,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => LoginScreen(),
+        '/': (context) => SplashScreen(),
+        '/Loginscreen':(context) => LoginScreen(),
         '/Register':(context) => RegisterScreen(),
         '/otp':(context) => OtpScreen(contact: '',),
+        '/decouvertescreen': (context) => DecouverteScreen(),
+        '/recherche': (context) => RechercheScreen(),
       },
     );
   }

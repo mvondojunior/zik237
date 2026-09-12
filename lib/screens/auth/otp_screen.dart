@@ -100,7 +100,10 @@ class _OtpScreenState extends State<OtpScreen> {
       if (!mounted) return;
       _showSnackBar('Compte vérifié avec succès !');
       if (role == 'artiste') {
-        // TODO: context.go('/dashboard') avec GoRouter
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/decouverte',
+              (route) => false,
+        );
       } else {
         // TODO: context.go('/decouverte') avec GoRouter
       }
