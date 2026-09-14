@@ -8,6 +8,8 @@ import 'package:app_mobile_music_underground/core/app_constants.dart';
 import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
 import 'package:app_mobile_music_underground/screens/splashscreen/splashscreen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/decouverte_screen.dart';
+import 'package:app_mobile_music_underground/screens/artiste/dashboard_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/otp':(context) => OtpScreen(contact: '',),
         '/decouvertescreen': (context) => DecouverteScreen(),
         '/recherche': (context) => RechercheScreen(),
+        '/dashboardscreen': (context) => DashboardScreen(),
       },
     );
   }

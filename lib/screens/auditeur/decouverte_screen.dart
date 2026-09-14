@@ -217,7 +217,7 @@ class _DecouverteHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bonsoir 👋',
+                'Bonsoir',
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,

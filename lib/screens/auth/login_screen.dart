@@ -6,6 +6,8 @@ import 'package:app_mobile_music_underground/core/app_constants.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
 import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
 import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
+import 'package:app_mobile_music_underground/screens/artiste/dashboard_screen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/decouverte_screen.dart';
 
 /// Écran de connexion — Zik237
 /// Branché sur AuthService avec Supabase.
@@ -59,9 +61,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final role = await _authService.getUserRole();
       if (!mounted) return;
       if (role == 'artiste') {
-        // TODO: context.go('/dashboard') avec GoRouter
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/dashboardscreen',
+              (route) => false,
+        );
       } else {
-        // TODO: context.go('/decouverte') avec GoRouter
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/decouvertescreen',
+              (route) => false,
+        );
       }
     }
   }
