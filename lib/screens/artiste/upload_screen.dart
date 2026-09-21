@@ -50,25 +50,22 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   // ── Sélectionner le fichier audio ────────────────────────────────────────
+  // ── Sélectionner le fichier audio ────────────────────────────────────────
   Future<void> _selectionnerAudio() async {
-    final result = await FilePicker.platform.pickFiles(
+    final PlatformFile? file = await FilePicker.pickFile(
       type: FileType.audio,
-      allowMultiple: false,
     );
 
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
+    if (file != null && file.path != null) {
       setState(() {
-        _audioFile = file;
-        _audioFileName = result.files.single.name;
+        _audioFile = File(file.path!);
+        _audioFileName = file.name;
         _genreIASuggestion = null;
         _genreIAConfiance = null;
       });
-      // Lancer la classification IA après sélection
-      await _classifierGenreIA(file);
+      await _classifierGenreIA(_audioFile!);
     }
   }
-
   // ── Sélectionner la pochette ─────────────────────────────────────────────
   Future<void> _selectionnerPochette() async {
     final picker = ImagePicker();

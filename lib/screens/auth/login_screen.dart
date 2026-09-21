@@ -281,10 +281,11 @@ class _LoginHeader extends StatelessWidget {
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.music_note_rounded,
-                    color: Colors.white,
-                    size: 24,
+                  child: Image.asset(
+                    'assets/images/zik-237-mobile-app-icon.png',
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(height: 12),
