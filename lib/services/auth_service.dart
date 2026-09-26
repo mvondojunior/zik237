@@ -31,7 +31,7 @@ class AuthService {
     required String email,
     required String password,
     required String nomAffichage,
-    required String role, // 'auditeur' ou 'artiste'
+    required String role,
     String? ville,
   }) async {
     try {
@@ -49,28 +49,15 @@ class AuthService {
         return 'Inscription échouée. Réessaie.';
       }
 
-      // Insérer le profil dans la table utilisateurs
-      await _supabase.from('utilisateurs').insert({
-        'id': response.user!.id,
-        'email': email,
-        'nom_affichage': nomAffichage,
-        'role': role,
-        'ville': ville,
-        'verifie': false,
-      });
+      // On ne crée PAS encore le profil ici
+      // On le fera après la vérification OTP
 
-      // Si artiste → créer aussi le profil artiste
-      if (role == 'artiste') {
-        await _supabase.from('profils_artiste').insert({
-          'id': response.user!.id,
-        });
-      }
-
-      return null; // succès
+      return null; // succès → on envoie vers l’écran OTP
     } on AuthException catch (e) {
       return _handleAuthError(e.message);
     } catch (e) {
-      return 'Une erreur est survenue. Réessaie.';
+      print('ERREUR COMPLÈTE : $e');
+      return 'Erreur : $e';
     }
   }
 
@@ -116,23 +103,40 @@ class AuthService {
         token: code,
       );
 
-      // Marquer le compte comme vérifié dans la table utilisateurs
-      final userId = currentUser?.id;
-      if (userId != null) {
-        await _supabase
-            .from('utilisateurs')
-            .update({'verifie': true})
-            .eq('id', userId);
+      final user = currentUser;
+      if (user == null) return 'Utilisateur non trouvé.';
+
+      // Récupérer les données stockées dans user_metadata
+      final meta = user.userMetadata ?? {};
+      final nomAffichage = meta['nom_affichage'] as String? ?? '';
+      final role = meta['role'] as String? ?? 'auditeur';
+      final ville = meta['ville'] as String?;
+
+      // Créer le profil maintenant que l’utilisateur est authentifié
+      await _supabase.from('utilisateurs').insert({
+        'id': user.id,
+        'email': user.email,
+        'nom_affichage': nomAffichage,
+        'role': role,
+        'ville': ville,
+        'verifie': true,
+      });
+
+      // Si artiste → créer aussi le profil artiste
+      if (role == 'artiste') {
+        await _supabase.from('profils_artiste').insert({
+          'id': user.id,
+        });
       }
 
       return null; // succès
     } on AuthException catch (e) {
       return _handleAuthError(e.message);
     } catch (e) {
-      return 'Code invalide ou expiré.';
+      print('ERREUR COMPLÈTE : $e');
+      return 'Erreur : $e';
     }
   }
-
   // ────────────────────────────────────────────────────────────────────────
   // RENVOYER L'OTP
   // ────────────────────────────────────────────────────────────────────────
