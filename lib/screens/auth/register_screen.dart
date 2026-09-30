@@ -3,11 +3,9 @@ import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/core/app_text_field.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
-import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
 import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
 
-/// Écran d'inscription — Zik237
-/// Branché sur AuthService avec Supabase.
+/// Écran d'inscription — Zik237 (version améliorée)
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -44,14 +42,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // ── Inscription ──────────────────────────────────────────────────────────
   Future<void> _handleRegister() async {
     final nom = _nomController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirm = _confirmPasswordController.text;
 
-    // Validations
     if (nom.isEmpty || email.isEmpty || password.isEmpty || confirm.isEmpty) {
       _showSnackBar('Merci de remplir tous les champs');
       return;
@@ -86,7 +82,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (error != null) {
       _showSnackBar(error);
     } else {
-      // Succès → naviguer vers OTP
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => OtpScreen(
@@ -105,14 +100,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
   }
 
   void _goBack() => Navigator.of(context).pop();
-
   void _goToLogin() => Navigator.of(context).pop();
 
   @override
@@ -120,14 +114,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // ── HEADER ──────────────────────────────────────────────────
             _RegisterHeader(onBack: _goBack),
 
-            // ── FORMULAIRE ──────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -136,44 +129,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text(
                     'Tu es...',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.textSecondary,
-                      letterSpacing: 0.3,
+                      letterSpacing: 0.2,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   _RoleSelector(
                     selectedRole: _selectedRole,
                     onRoleChanged: (role) =>
                         setState(() => _selectedRole = role),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 28),
 
                   // Nom d'affichage
                   const AppInputLabel(label: "Nom d'affichage"),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: _nomController,
                     hint: 'Ton nom ou pseudo',
                     icon: Icons.person_outline_rounded,
                     isFocused: true,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
                   // Email
                   const AppInputLabel(label: 'Email'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: _emailController,
                     hint: 'nom@email.com',
                     icon: Icons.mail_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
                   // Mot de passe
                   const AppInputLabel(label: 'Mot de passe'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: _passwordController,
                     hint: 'Minimum 8 caractères',
@@ -191,11 +185,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               () => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
                   // Confirmer mot de passe
                   const AppInputLabel(label: 'Confirmer le mot de passe'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: _confirmPasswordController,
                     hint: 'Répète ton mot de passe',
@@ -214,28 +208,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               () => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
                   // Ville
                   const AppInputLabel(label: 'Ta ville'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   _VilleDropdown(
                     villes: _villes,
                     selectedVille: _selectedVille,
                     onChanged: (ville) =>
                         setState(() => _selectedVille = ville),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 32),
 
-                  // Bouton créer compte
+                  // Bouton
                   AppPrimaryButton(
                     label: 'Créer mon compte',
                     isLoading: _isLoading,
                     onPressed: _handleRegister,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Conditions d'utilisation
+                  // Conditions
                   Center(
                     child: RichText(
                       textAlign: TextAlign.center,
@@ -244,21 +238,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         style: TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 12,
-                          height: 1.6,
+                          height: 1.5,
                         ),
                         children: [
                           TextSpan(
                             text: "conditions d'utilisation",
                             style: TextStyle(
                               color: AppColors.violetDark,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
                   // Lien connexion
                   Center(
@@ -269,14 +263,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           text: 'Déjà un compte ? ',
                           style: TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 13,
+                            fontSize: 14,
                           ),
                           children: [
                             TextSpan(
                               text: 'Se connecter',
                               style: TextStyle(
                                 color: AppColors.violetDark,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -302,19 +296,34 @@ class _RegisterHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 175,
+      height: 180,
       child: Stack(
         children: [
-          Container(height: 175, color: AppColors.violetDark),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: ClipPath(
-              clipper: _RegisterWaveClipper(),
-              child: Container(height: 60, color: AppColors.background),
+          Container(
+            height: 180,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.violetDark,
+                  Color(0xFF5B2C8A), // léger dégradé dans le même ton
+                ],
+              ),
             ),
           ),
           Positioned(
-            top: 52, left: 16,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              clipper: _RegisterWaveClipper(),
+              child: Container(height: 55, color: AppColors.background),
+            ),
+          ),
+          Positioned(
+            top: 50,
+            left: 12,
             child: IconButton(
               onPressed: onBack,
               icon: const Icon(
@@ -325,26 +334,28 @@ class _RegisterHeader extends StatelessWidget {
             ),
           ),
           const Positioned(
-            top: 54, left: 56,
+            top: 54,
+            left: 56,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Zik237',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: Colors.white60,
-                    letterSpacing: 1.2,
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 6),
                 Text(
                   'Créer un compte',
                   style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.6,
                   ),
                 ),
               ],
@@ -361,13 +372,13 @@ class _RegisterWaveClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     path.moveTo(0, size.height);
-    path.lineTo(0, size.height * 0.5);
+    path.lineTo(0, size.height * 0.45);
     path.quadraticBezierTo(
         size.width * 0.2, 0, size.width * 0.4, size.height * 0.4);
     path.quadraticBezierTo(
-        size.width * 0.6, size.height * 0.8, size.width * 0.8, size.height * 0.2);
+        size.width * 0.6, size.height * 0.85, size.width * 0.8, size.height * 0.25);
     path.quadraticBezierTo(
-        size.width * 0.92, 0, size.width, size.height * 0.3);
+        size.width * 0.92, 0, size.width, size.height * 0.35);
     path.lineTo(size.width, size.height);
     path.close();
     return path;
@@ -377,7 +388,7 @@ class _RegisterWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(_RegisterWaveClipper oldClipper) => false;
 }
 
-// ─── SÉLECTEUR DE RÔLE ───────────────────────────────────────────────────────
+// ─── SÉLECTEUR DE RÔLE (amélioré) ────────────────────────────────────────────
 class _RoleSelector extends StatelessWidget {
   final String selectedRole;
   final ValueChanged<String> onRoleChanged;
@@ -397,7 +408,7 @@ class _RoleSelector extends StatelessWidget {
           isSelected: selectedRole == 'auditeur',
           onTap: () => onRoleChanged('auditeur'),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         _RoleCard(
           label: 'Artiste',
           icon: Icons.mic_rounded,
@@ -428,29 +439,45 @@ class _RoleCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.violetLight : Colors.transparent,
             border: Border.all(
               color: isSelected ? AppColors.violetDark : AppColors.border,
-              width: isSelected ? 1.5 : 1.0,
+              width: isSelected ? 1.8 : 1.0,
             ),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: isSelected
+                ? [
+              BoxShadow(
+                color: AppColors.violetDark.withOpacity(0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ]
+                : [],
           ),
           child: Column(
             children: [
-              Icon(
-                icon,
-                size: 24,
-                color: isSelected ? AppColors.violetDark : AppColors.textMuted,
+              AnimatedScale(
+                scale: isSelected ? 1.08 : 1.0,
+                duration: const Duration(milliseconds: 220),
+                child: Icon(
+                  icon,
+                  size: 26,
+                  color: isSelected
+                      ? AppColors.violetDark
+                      : AppColors.textMuted,
+                ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected
                       ? AppColors.violetDark
                       : AppColors.textSecondary,
@@ -496,21 +523,21 @@ class _VilleDropdown extends StatelessWidget {
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 14,
+          vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(
-            color: AppColors.borderFocused,
-            width: 1.5,
+            color: AppColors.violetDark,
+            width: 1.6,
           ),
         ),
       ),

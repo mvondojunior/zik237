@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
 
 /// Écran de découverte — Zik237 (Auditeur)
 /// Affiche le fil de titres triés par score de découverte,
@@ -369,7 +370,11 @@ class _TitreCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // TODO: navigation vers LecteurScreen avec ce titre
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LecteurScreen(titre: titre),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/core/app_text_field.dart';
-import 'package:app_mobile_music_underground/core/app_constants.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
-import 'package:app_mobile_music_underground/screens/auth/otp_screen.dart';
 import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
-import 'package:app_mobile_music_underground/screens/artiste/dashboard_screen.dart';
-import 'package:app_mobile_music_underground/screens/auditeur/decouverte_screen.dart';
 
-/// Écran de connexion — Zik237
-/// Branché sur AuthService avec Supabase.
+/// Écran de connexion — Zik237 (version améliorée)
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ── Connexion email / mot de passe ──────────────────────────────────────
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -57,7 +51,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (error != null) {
       _showSnackBar(error);
     } else {
-      // Rediriger selon le rôle
       final role = await _authService.getUserRole();
       if (!mounted) return;
       if (role == 'artiste') {
@@ -74,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ── Connexion Google ────────────────────────────────────────────────────
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     final error = await _authService.signInWithGoogle();
@@ -83,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (error != null) _showSnackBar(error);
   }
 
-  // ── Navigation ─────────────────────────────────────────────────────────
   void _goToRegister() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const RegisterScreen()),
@@ -91,9 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _goToForgotPassword() {
-    // TODO: Navigator.of(context).push(
-    //   MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-    // );
+    // TODO: ForgotPasswordScreen
   }
 
   void _showSnackBar(String message) {
@@ -103,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -114,14 +103,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // ── HEADER ────────────────────────────────────────────────
             const _LoginHeader(),
 
-            // ── FORMULAIRE ────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -130,25 +118,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text(
                     'Connecte-toi',
                     style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.6,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   const Text(
                     'Découvre la scène underground 237',
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 32),
 
                   // Email
                   const AppInputLabel(label: 'Email ou téléphone'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: _emailController,
                     hint: 'nom@email.com',
@@ -156,11 +145,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     isFocused: true,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
                   // Mot de passe
                   const AppInputLabel(label: 'Mot de passe'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: _passwordController,
                     hint: '••••••••',
@@ -179,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               () => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // Mot de passe oublié
                   Align(
@@ -191,12 +180,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.violetMid,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
                   // Bouton connexion
                   AppPrimaryButton(
@@ -204,11 +193,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     isLoading: _isLoading,
                     onPressed: _handleLogin,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Séparateur
                   const AppDivider(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Google
                   AppSocialButton(
@@ -216,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: Icons.g_mobiledata_rounded,
                     onPressed: _handleGoogleSignIn,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 32),
 
                   // Lien inscription
                   Center(
@@ -227,14 +216,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           text: 'Pas encore de compte ? ',
                           style: TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 13,
+                            fontSize: 14,
                           ),
                           children: [
                             TextSpan(
                               text: "S'inscrire",
                               style: TextStyle(
                                 color: AppColors.violetDark,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -259,51 +248,68 @@ class _LoginHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 220,
+      height: 230,
       child: Stack(
         children: [
-          Container(height: 220, color: AppColors.violetDark),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: ClipPath(
-              clipper: _WaveClipper(),
-              child: Container(height: 80, color: AppColors.background),
+          Container(
+            height: 230,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.violetDark,
+                  Color(0xFF5B2C8A),
+                ],
+              ),
             ),
           ),
           Positioned(
-            top: 56, left: 24,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              clipper: _WaveClipper(),
+              child: Container(height: 75, color: AppColors.background),
+            ),
+          ),
+          Positioned(
+            top: 56,
+            left: 24,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 44, height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  padding: const EdgeInsets.all(10),
                   child: Image.asset(
                     'assets/images/zik-237-mobile-app-icon.png',
-                    width: 24,
-                    height: 24,
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 const Text(
                   'Bienvenue sur',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13,
                     color: Colors.white70,
-                    letterSpacing: 1.2,
+                    letterSpacing: 1.3,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 4),
                 const Text(
                   'Zik237',
                   style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.6,
                   ),
                 ),
               ],

@@ -5,8 +5,7 @@ import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
 
-/// Écran de vérification OTP — Zik237
-/// Branché sur AuthService avec Supabase.
+/// Écran de vérification OTP — Zik237 (version améliorée)
 
 class OtpScreen extends StatefulWidget {
   final String contact;
@@ -70,7 +69,6 @@ class _OtpScreenState extends State<OtpScreen> {
   String get _otpCode => _controllers.map((c) => c.text).join();
   bool get _isOtpComplete => _controllers.every((c) => c.text.isNotEmpty);
 
-  // ── Vérification OTP ────────────────────────────────────────────────────
   Future<void> _handleVerify() async {
     if (!_isOtpComplete) {
       _showSnackBar('Merci de saisir les 6 chiffres du code');
@@ -91,26 +89,28 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (error != null) {
       _showSnackBar(error);
-      // Vider les champs en cas d'erreur
       for (final c in _controllers) c.clear();
       _focusNodes[0].requestFocus();
     } else {
-      // Succès → rediriger selon le rôle
       final role = await _authService.getUserRole();
       if (!mounted) return;
+
       _showSnackBar('Compte vérifié avec succès !');
+
       if (role == 'artiste') {
         Navigator.of(context).pushNamedAndRemoveUntil(
-          '/decouverte',
+          '/dashboardscreen',
               (route) => false,
         );
       } else {
-        // TODO: context.go('/decouverte') avec GoRouter
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/decouvertescreen',
+              (route) => false,
+        );
       }
     }
   }
 
-  // ── Renvoyer le code ────────────────────────────────────────────────────
   Future<void> _handleResend() async {
     if (!_canResend) return;
 
@@ -138,7 +138,7 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -183,14 +183,13 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // ── HEADER ──────────────────────────────────────────────────
             _OtpHeader(onBack: _goBack),
 
-            // ── CONTENU ─────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -199,13 +198,13 @@ class _OtpScreenState extends State<OtpScreen> {
                   const Text(
                     'Vérifie ton code',
                     style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.6,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // Sous-titre
                   RichText(
@@ -221,13 +220,13 @@ class _OtpScreenState extends State<OtpScreen> {
                           text: _maskedContact(widget.contact),
                           style: const TextStyle(
                             color: AppColors.violetDark,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 44),
 
                   // Champs OTP
                   Row(
@@ -261,9 +260,9 @@ class _OtpScreenState extends State<OtpScreen> {
                       child: const Text(
                         'Renvoyer le code',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           color: AppColors.violetDark,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     )
@@ -279,14 +278,14 @@ class _OtpScreenState extends State<OtpScreen> {
                             text: '${_secondsRemaining}s',
                             style: const TextStyle(
                               color: AppColors.violetMid,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Changer de contact
                   Center(
@@ -320,19 +319,34 @@ class _OtpHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 175,
+      height: 180,
       child: Stack(
         children: [
-          Container(height: 175, color: AppColors.violetDark),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: ClipPath(
-              clipper: _OtpWaveClipper(),
-              child: Container(height: 60, color: AppColors.background),
+          Container(
+            height: 180,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.violetDark,
+                  Color(0xFF5B2C8A),
+                ],
+              ),
             ),
           ),
           Positioned(
-            top: 52, left: 16,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              clipper: _OtpWaveClipper(),
+              child: Container(height: 55, color: AppColors.background),
+            ),
+          ),
+          Positioned(
+            top: 50,
+            left: 12,
             child: IconButton(
               onPressed: onBack,
               icon: const Icon(
@@ -342,39 +356,43 @@ class _OtpHeader extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            top: 54, left: 56,
-            child: const Column(
+          const Positioned(
+            top: 54,
+            left: 56,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Zik237',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: Colors.white60,
-                    letterSpacing: 1.2,
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 6),
                 Text(
                   'Vérification',
                   style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.6,
                   ),
                 ),
               ],
             ),
           ),
           Positioned(
-            top: 54, right: 24,
+            top: 54,
+            right: 24,
             child: Container(
-              width: 44, height: 44,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
                 Icons.shield_outlined,
@@ -394,9 +412,9 @@ class _OtpWaveClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     path.moveTo(0, size.height);
-    path.lineTo(0, size.height * 0.5);
+    path.lineTo(0, size.height * 0.45);
     path.quadraticBezierTo(
-        size.width * 0.25, 0, size.width * 0.5, size.height * 0.5);
+        size.width * 0.25, 0, size.width * 0.5, size.height * 0.45);
     path.quadraticBezierTo(
         size.width * 0.75, size.height, size.width, size.height * 0.3);
     path.lineTo(size.width, size.height);
@@ -408,7 +426,7 @@ class _OtpWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(_OtpWaveClipper oldClipper) => false;
 }
 
-// ─── CHAMP OTP ───────────────────────────────────────────────────────────────
+// ─── CHAMP OTP (amélioré) ────────────────────────────────────────────────────
 class _OtpField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -424,9 +442,11 @@ class _OtpField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasValue = controller.text.isNotEmpty;
+
     return SizedBox(
-      width: 46,
-      height: 56,
+      width: 48,
+      height: 58,
       child: RawKeyboardListener(
         focusNode: FocusNode(),
         onKey: (event) {
@@ -444,34 +464,32 @@ class _OtpField extends StatelessWidget {
           maxLength: 1,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
             color: AppColors.violetDark,
           ),
           decoration: InputDecoration(
             counterText: '',
             filled: true,
-            fillColor: controller.text.isNotEmpty
+            fillColor: hasValue
                 ? AppColors.violetLight
                 : AppColors.background,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: controller.text.isNotEmpty
-                    ? AppColors.violetDark
-                    : AppColors.border,
-                width: controller.text.isNotEmpty ? 1.5 : 1.0,
+                color: hasValue ? AppColors.violetDark : AppColors.border,
+                width: hasValue ? 1.8 : 1.0,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
                 color: AppColors.violetDark,
-                width: 1.5,
+                width: 1.8,
               ),
             ),
           ),
