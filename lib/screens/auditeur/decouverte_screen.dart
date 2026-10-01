@@ -26,11 +26,20 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
   int _currentNavIndex = 0;
 
   final List<String> _villes = [
-    'Toutes', 'Yaoundé', 'Douala', 'Bafoussam', 'Bamenda',
+    'Toutes',
+    'Yaoundé',
+    'Douala',
+    'Bafoussam',
+    'Bamenda',
   ];
 
   final List<String> _genres = [
-    'Tous', 'Trap 237', 'Bikutsi', 'Mbolé', 'Afro-drill', 'Afrobeats',
+    'Tous',
+    'Trap 237',
+    'Bikutsi',
+    'Mbolé',
+    'Afro-drill',
+    'Afrobeats',
   ];
 
   @override
@@ -39,12 +48,10 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
     _loadTitres();
   }
 
-  // ── Charger les titres depuis Supabase ──────────────────────────────────
   Future<void> _loadTitres() async {
     setState(() => _isLoading = true);
 
     try {
-      // Construction de la requête avec les filtres AVANT order/limit
       var query = _supabase
           .from('titres')
           .select('''
@@ -57,7 +64,6 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
           ''')
           .eq('publie', true);
 
-      // Appliquer les filtres optionnels avant order/limit
       if (_selectedVille != null && _selectedVille != 'Toutes') {
         query = query.eq('ville', _selectedVille!);
       }
@@ -65,10 +71,10 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
         query = query.eq('genre_principal', _selectedGenre!);
       }
 
-      // order et limit en dernier
       final data = await query
           .order('score_decouverte', ascending: false)
           .limit(30);
+
       setState(() {
         _titres = List<Map<String, dynamic>>.from(data);
         _isLoading = false;
@@ -86,7 +92,7 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -107,74 +113,74 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
           color: AppColors.violetDark,
           onRefresh: _loadTitres,
           child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             slivers: [
-              // ── HEADER ────────────────────────────────────────────────
+              // Header
               SliverToBoxAdapter(
-                child: _DecouverteHeader(
-                  onSignOut: _handleSignOut,
-                ),
+                child: _DecouverteHeader(onSignOut: _handleSignOut),
               ),
 
-              // ── FILTRES VILLE ─────────────────────────────────────────
+              // Filtres Ville
               SliverToBoxAdapter(
                 child: _FiltreChips(
                   items: _villes,
                   selected: _selectedVille ?? 'Toutes',
                   onSelected: (ville) {
-                    setState(() => _selectedVille =
-                    ville == 'Toutes' ? null : ville);
+                    setState(() =>
+                    _selectedVille = ville == 'Toutes' ? null : ville);
                     _loadTitres();
                   },
                 ),
               ),
 
-              // ── FILTRES GENRE ─────────────────────────────────────────
+              // Filtres Genre
               SliverToBoxAdapter(
                 child: _FiltreChips(
                   items: _genres,
                   selected: _selectedGenre ?? 'Tous',
                   onSelected: (genre) {
-                    setState(() => _selectedGenre =
-                    genre == 'Tous' ? null : genre);
+                    setState(() =>
+                    _selectedGenre = genre == 'Tous' ? null : genre);
                     _loadTitres();
                   },
                   isGenre: true,
                 ),
               ),
 
-              // ── TITRE SECTION ─────────────────────────────────────────
+              // Titre de section
               const SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
                   child: Text(
                     'En ce moment',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
                     ),
                   ),
                 ),
               ),
 
-              // ── LISTE DES TITRES ──────────────────────────────────────
+              // Liste des titres
               _isLoading
                   ? const SliverFillRemaining(
                 child: Center(
                   child: CircularProgressIndicator(
                     color: AppColors.violetDark,
-                    strokeWidth: 2,
+                    strokeWidth: 2.5,
                   ),
                 ),
               )
                   : _titres.isEmpty
                   ? SliverFillRemaining(
-                child: _EmptyState(
-                  onRetry: _loadTitres,
-                ),
+                child: _EmptyState(onRetry: _loadTitres),
               )
                   : SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                         (context, index) => _TitreCard(
@@ -189,8 +195,6 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
           ),
         ),
       ),
-
-      // ── BOTTOM NAV AUDITEUR ───────────────────────────────────────────
       bottomNavigationBar: _AuditeurBottomNav(
         currentIndex: _currentNavIndex,
         onTap: (index) => setState(() => _currentNavIndex = index),
@@ -204,68 +208,91 @@ class _DecouverteHeader extends StatelessWidget {
   final VoidCallback onSignOut;
   const _DecouverteHeader({required this.onSignOut});
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Bonjour';
+    if (hour < 18) return 'Bon après-midi';
+    return 'Bonsoir';
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
     final nom = user?.userMetadata?['nom_affichage'] ?? 'Auditeur';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bonsoir',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getGreeting(),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              Text(
-                nom,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.5,
+                const SizedBox(height: 2),
+                Text(
+                  nom,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.6,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          Row(
-            children: [
-              // Bouton recherche
-              IconButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/recherche');
-                },
-                icon: const Icon(
-                  Icons.search_rounded,
-                  color: AppColors.textSecondary,
-                  size: 24,
-                ),
+          // Recherche
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/recherche');
+              },
+              icon: const Icon(
+                Icons.search_rounded,
+                color: AppColors.textSecondary,
+                size: 22,
               ),
-              // Avatar
-              GestureDetector(
-                onTap: onSignOut,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.violetDark,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Avatar
+          GestureDetector(
+            onTap: onSignOut,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.violetDark, Color(0xFF5B2C8A)],
                 ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.violetDark.withOpacity(0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
           ),
         ],
       ),
@@ -289,51 +316,78 @@ class _FiltreChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final isSelected = item == selected;
-          return GestureDetector(
-            onTap: () => onSelected(item),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.violetDark
-                    : AppColors.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.violetDark
-                      : AppColors.border,
-                ),
-              ),
-              child: Text(
-                item,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected
-                      ? FontWeight.w600
-                      : FontWeight.w400,
-                  color: isSelected
-                      ? Colors.white
-                      : AppColors.textSecondary,
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(20, isGenre ? 14 : 6, 20, 8),
+          child: Text(
+            isGenre ? 'Genre' : 'Ville',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+              letterSpacing: 0.3,
             ),
-          );
-        },
-      ),
+          ),
+        ),
+        SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final isSelected = item == selected;
+              return GestureDetector(
+                onTap: () => onSelected(item),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.violetDark
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.violetDark
+                          : AppColors.border,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                      BoxShadow(
+                        color: AppColors.violetDark.withOpacity(0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                        : null,
+                  ),
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -348,7 +402,6 @@ class _TitreCard extends StatelessWidget {
     required this.index,
   });
 
-  // Couleurs de pochette selon l'index
   static const List<Color> _pochetteCouleurs = [
     Color(0xFF7F77DD),
     Color(0xFFD4537E),
@@ -377,124 +430,134 @@ class _TitreCard extends StatelessWidget {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border, width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             // Pochette
             Container(
-              width: 52,
-              height: 52,
+              width: 58,
+              height: 58,
               decoration: BoxDecoration(
-                color: couleur.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+                color: couleur.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: couleur.withOpacity(0.4),
+                  color: couleur.withOpacity(0.35),
                 ),
               ),
               child: titre['pochette_url'] != null
                   ? ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 child: Image.network(
                   titre['pochette_url'],
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Icon(
                     Icons.music_note_rounded,
                     color: couleur,
-                    size: 24,
+                    size: 26,
                   ),
                 ),
               )
                   : Icon(
                 Icons.music_note_rounded,
                 color: couleur,
-                size: 24,
+                size: 26,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
 
             // Infos
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titre du morceau
                   Text(
                     titre['titre'] as String? ?? '',
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  // Artiste + ville
-                  Text(
-                    '$nomArtiste${ville.isNotEmpty ? ' · $ville' : ''}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                      letterSpacing: -0.2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  // Genre
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                  Text(
+                    '$nomArtiste${ville.isNotEmpty ? ' · $ville' : ''}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.violetLight,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      genre,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.violetMid,
-                        fontWeight: FontWeight.w500,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.violetLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          genre,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.violetMid,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (isNew) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.violetDark.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Nouveau',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.violetDark,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
 
-            // Stats + badges
+            // Stats + Play
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Badge nouveau ou croissance
-                if (isNew)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.violetDark.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Nouveau',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.violetDark,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  )
-                else
+                if (!isNew)
                   Row(
                     children: [
                       const Icon(
@@ -502,32 +565,38 @@ class _TitreCard extends StatelessWidget {
                         size: 14,
                         color: AppColors.success,
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 3),
                       Text(
                         _formatNumber(nbEcoutes7j),
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.success,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                const SizedBox(height: 6),
-                // Total écoutes
+                const SizedBox(height: 4),
                 Text(
                   '${_formatNumber(nbEcoutes)} écoutes',
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: AppColors.textMuted,
                   ),
                 ),
-                const SizedBox(height: 4),
-                // Bouton play
-                const Icon(
-                  Icons.play_circle_rounded,
-                  size: 28,
-                  color: AppColors.violetDark,
+                const SizedBox(height: 8),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.violetDark.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 22,
+                    color: AppColors.violetDark,
+                  ),
                 ),
               ],
             ),
@@ -554,36 +623,47 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.music_off_rounded,
-            size: 56,
-            color: AppColors.textMuted,
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.violetLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.music_off_rounded,
+              size: 40,
+              color: AppColors.violetMid,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           const Text(
             'Aucun titre trouvé',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Essaie un autre filtre',
+            'Essaie un autre filtre ou reviens plus tard',
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           TextButton(
             onPressed: onRetry,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.violetDark,
+            ),
             child: const Text(
               'Réessayer',
               style: TextStyle(
-                color: AppColors.violetDark,
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
@@ -621,7 +701,7 @@ class _AuditeurBottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -683,29 +763,33 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isActive
-                ? AppColors.accentAuditeur
-                : AppColors.textMuted,
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight:
-              isActive ? FontWeight.w600 : FontWeight.w400,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
               color: isActive
                   ? AppColors.accentAuditeur
                   : AppColors.textMuted,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive
+                    ? AppColors.accentAuditeur
+                    : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

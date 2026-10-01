@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Service d'authentification — Zik237
 /// Gère toutes les interactions avec Supabase Auth :
-/// inscription, connexion, déconnexion, OTP, reset mot de passe.
+/// inscription, connexion, déconnexion, reset mot de passe.
 ///
 /// Usage depuis n'importe quel écran :
 /// ```dart
@@ -49,10 +49,26 @@ class AuthService {
         return 'Inscription échouée. Réessaie.';
       }
 
-      // On ne crée PAS encore le profil ici
-      // On le fera après la vérification OTP
+      final user = response.user!;
 
-      return null; // succès → on envoie vers l’écran OTP
+      // Création immédiate du profil
+      await _supabase.from('utilisateurs').insert({
+        'id': user.id,
+        'email': user.email,
+        'nom_affichage': nomAffichage,
+        'role': role,
+        'ville': ville,
+        'verifie': true,
+      });
+
+      // Si artiste → créer aussi le profil artiste
+      if (role == 'artiste') {
+        await _supabase.from('profils_artiste').insert({
+          'id': user.id,
+        });
+      }
+
+      return null; // succès
     } on AuthException catch (e) {
       return _handleAuthError(e.message);
     } catch (e) {
@@ -81,89 +97,6 @@ class AuthService {
       return _handleAuthError(e.message);
     } catch (e) {
       return 'Une erreur est survenue. Réessaie.';
-    }
-  }
-
-  // ────────────────────────────────────────────────────────────────────────
-  // VÉRIFICATION OTP
-  // ────────────────────────────────────────────────────────────────────────
-
-  /// Vérifie le code OTP reçu par email ou SMS.
-  /// Retourne null si succès, un message d'erreur sinon.
-  Future<String?> verifyOtp({
-    required String contact,
-    required String code,
-    required bool isEmail,
-  }) async {
-    try {
-      await _supabase.auth.verifyOTP(
-        type: isEmail ? OtpType.email : OtpType.sms,
-        email: isEmail ? contact : null,
-        phone: isEmail ? null : contact,
-        token: code,
-      );
-
-      final user = currentUser;
-      if (user == null) return 'Utilisateur non trouvé.';
-
-      // Récupérer les données stockées dans user_metadata
-      final meta = user.userMetadata ?? {};
-      final nomAffichage = meta['nom_affichage'] as String? ?? '';
-      final role = meta['role'] as String? ?? 'auditeur';
-      final ville = meta['ville'] as String?;
-
-      // Créer le profil maintenant que l’utilisateur est authentifié
-      await _supabase.from('utilisateurs').insert({
-        'id': user.id,
-        'email': user.email,
-        'nom_affichage': nomAffichage,
-        'role': role,
-        'ville': ville,
-        'verifie': true,
-      });
-
-      // Si artiste → créer aussi le profil artiste
-      if (role == 'artiste') {
-        await _supabase.from('profils_artiste').insert({
-          'id': user.id,
-        });
-      }
-
-      return null; // succès
-    } on AuthException catch (e) {
-      return _handleAuthError(e.message);
-    } catch (e) {
-      print('ERREUR COMPLÈTE : $e');
-      return 'Erreur : $e';
-    }
-  }
-  // ────────────────────────────────────────────────────────────────────────
-  // RENVOYER L'OTP
-  // ────────────────────────────────────────────────────────────────────────
-
-  /// Renvoie un nouveau code OTP par email ou SMS.
-  /// Retourne null si succès, un message d'erreur sinon.
-  Future<String?> resendOtp({
-    required String contact,
-    required bool isEmail,
-  }) async {
-    try {
-      if (isEmail) {
-        await _supabase.auth.resend(
-          type: OtpType.email,
-          email: contact,
-        );
-      } else {
-        await _supabase.auth.resend(
-          type: OtpType.sms,
-          phone: contact,
-        );
-      }
-      return null; // succès
-    } on AuthException catch (e) {
-      return _handleAuthError(e.message);
-    } catch (e) {
-      return 'Impossible de renvoyer le code. Réessaie.';
     }
   }
 
@@ -277,15 +210,6 @@ class AuthService {
     }
     if (message.contains('Password should be at least')) {
       return 'Le mot de passe doit contenir au moins 8 caractères.';
-    }
-    if (message.contains('Token has expired')) {
-      return 'Le code a expiré. Demande un nouveau code.';
-    }
-    if (message.contains('Otp has expired')) {
-      return 'Le code a expiré. Demande un nouveau code.';
-    }
-    if (message.contains('Invalid OTP')) {
-      return 'Code incorrect. Vérifie et réessaie.';
     }
     if (message.contains('rate limit')) {
       return 'Trop de tentatives. Attends quelques minutes.';

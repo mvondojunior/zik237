@@ -4,6 +4,7 @@ import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/core/app_text_field.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
 import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
+import 'package:app_mobile_music_underground/screens/auth/forgot_password.dart';
 
 /// Écran de connexion — Zik237 (version améliorée)
 
@@ -82,8 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _goToForgotPassword() {
-    // TODO: ForgotPasswordScreen
-  }
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const ForgotPasswordScreen(),
+        ),
+      );
+    }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
