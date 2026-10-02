@@ -25,12 +25,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       body: Center(
         child: Image.asset(
           'assets/images/zik-237-mobile-app-icon.png',
-          width: 180,
-          height: 180,
+          width: 80,
+          height: 80,
         ),
       ),
     );

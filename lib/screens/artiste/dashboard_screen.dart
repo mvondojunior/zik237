@@ -1,10 +1,10 @@
+import 'package:app_mobile_music_underground/screens/artiste/profil_artiste_screen.dart';
+import 'package:app_mobile_music_underground/screens/artiste/upload_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 
 /// Tableau de bord artiste — Zik237
-/// Affiche les statistiques d'écoutes, les revenus des pourboires,
-/// la liste des titres publiés et un accès rapide à l'upload.
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,7 +14,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // TODO: remplacer par les données réelles via ArtisteService / Riverpod provider
+  // TODO: remplacer par les données réelles
   final String _nomArtiste = 'Kev.237';
   final String _ville = 'Douala';
   final String _genre = 'Trap 237';
@@ -25,7 +25,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final int _totalPourboires = 8500;
   final int _nbTitres = 8;
 
-  // Écoutes sur 7 jours (données pour le mini graphique)
   final List<int> _ecoutes7j = [180, 240, 310, 280, 420, 390, 510];
 
   final List<Map<String, dynamic>> _titres = [
@@ -64,26 +63,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // ── HEADER ARTISTE ───────────────────────────────────────────
             _DashboardHeader(
               nomArtiste: _nomArtiste,
               ville: _ville,
               genre: _genre,
               estPremium: _estPremium,
             ),
-
-            // ── CONTENU ──────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  // ── STATS RAPIDES ──
-                  _SectionTitle(title: 'Vue d\'ensemble'),
-                  const SizedBox(height: 12),
+                  // Stats
+                  const _SectionTitle(title: 'Vue d\'ensemble'),
+                  const SizedBox(height: 14),
                   _StatsRow(
                     totalEcoutes: _totalEcoutes,
                     totalAbonnes: _totalAbonnes,
@@ -92,22 +88,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── MINI GRAPHIQUE 7 JOURS ──
-                  _SectionTitle(title: 'Écoutes — 7 derniers jours'),
-                  const SizedBox(height: 12),
+                  // Graphique
+                  const _SectionTitle(title: 'Écoutes — 7 derniers jours'),
+                  const SizedBox(height: 14),
                   _EcoutesChart(data: _ecoutes7j),
                   const SizedBox(height: 28),
 
-                  // ── MES TITRES ──
+                  // Mes titres
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Mes titres',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       GestureDetector(
@@ -118,22 +115,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'Voir tout',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.violetMid,
-                            fontWeight: FontWeight.w500,
+                            color: AppColors.accentArtiste,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  ..._titres.map((t) => _TitreCard(titre: t)).toList(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 14),
+                  ..._titres.map((t) => _TitreCard(titre: t)),
+                  const SizedBox(height: 28),
 
-                  // ── BOUTON PUBLIER ──
+                  // Bouton publier
                   AppPrimaryButton(
                     label: '+ Publier un nouveau titre',
                     onPressed: () {
-                      // TODO: navigation vers UploadScreen
+                      Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => UploadScreen(),
+                          ),
+                      );
                     },
                     color: AppColors.accentArtiste,
                   ),
@@ -143,9 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
-
-      // ── BOTTOM NAV ARTISTE ──
-      bottomNavigationBar: _ArtistBottomNav(),
+      bottomNavigationBar: const _ArtistBottomNav(),
     );
   }
 }
@@ -169,37 +168,52 @@ class _DashboardHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1E3A2F), AppColors.background],
-          stops: [0.0, 1.0],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1A3A2F),
+            Color(0xFF0F2A22),
+          ],
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Ligne du haut
+              // Top row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Mode Artiste',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.accentArtiste,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentArtiste.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Mode Artiste',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.accentArtiste,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
                   if (estPremium)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.accentArtiste.withOpacity(0.12),
+                        color: AppColors.accentArtiste.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: AppColors.accentArtiste.withOpacity(0.4),
@@ -207,13 +221,16 @@ class _DashboardHeader extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.star_rounded,
-                              size: 13, color: AppColors.accentArtiste),
+                          Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: AppColors.accentArtiste,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Premium',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: AppColors.accentArtiste,
                               fontWeight: FontWeight.w600,
                             ),
@@ -223,15 +240,14 @@ class _DashboardHeader extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Profil
               Row(
                 children: [
-                  // Avatar
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -240,49 +256,63 @@ class _DashboardHeader extends StatelessWidget {
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.violetMid.withOpacity(0.4),
-                        width: 2,
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accentArtiste.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.person_rounded,
                       color: Colors.white,
-                      size: 26,
+                      size: 28,
                     ),
                   ),
                   const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nomArtiste,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          nomArtiste,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '$ville · $genre',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 4),
+                        Text(
+                          '$ville · $genre',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      // TODO: navigation vers EditProfilScreen
-                    },
-                    icon: const Icon(
-                      Icons.edit_outlined,
-                      color: AppColors.textSecondary,
-                      size: 20,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ProfilArtisteScreen(),
+                            ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -306,8 +336,9 @@ class _SectionTitle extends StatelessWidget {
       title,
       style: const TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
+        letterSpacing: -0.2,
       ),
     );
   }
@@ -335,7 +366,7 @@ class _StatsRow extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 2.2,
+      childAspectRatio: 1.85,
       children: [
         _StatCard(
           label: 'Écoutes totales',
@@ -350,8 +381,8 @@ class _StatsRow extends StatelessWidget {
           accentColor: AppColors.accentArtiste,
         ),
         _StatCard(
-          label: 'Pourboires (FCFA)',
-          value: _formatNumber(totalPourboires),
+          label: 'Pourboires',
+          value: '${_formatNumber(totalPourboires)} F',
           icon: Icons.account_balance_wallet_rounded,
           accentColor: AppColors.success,
         ),
@@ -387,42 +418,56 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border(
-          top: BorderSide(color: accentColor, width: 2.5),
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: accentColor, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                child: Icon(icon, color: accentColor, size: 18),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.3,
             ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -430,7 +475,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── MINI GRAPHIQUE ÉCOUTES ──────────────────────────────────────────────────
+// ─── MINI GRAPHIQUE ──────────────────────────────────────────────────────────
 class _EcoutesChart extends StatelessWidget {
   final List<int> data;
   const _EcoutesChart({required this.data});
@@ -441,11 +486,12 @@ class _EcoutesChart extends StatelessWidget {
     final jours = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
     return Container(
-      height: 100,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      height: 130,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 0.8),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -460,34 +506,43 @@ class _EcoutesChart extends StatelessWidget {
                 Text(
                   _formatNumber(data[i]),
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 10,
                     color: AppColors.accentArtiste,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOut,
-                width: 24,
-                height: 60 * ratio,
+                curve: Curves.easeOutCubic,
+                width: 26,
+                height: 70 * ratio,
                 decoration: BoxDecoration(
+                  gradient: isMax
+                      ? LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      AppColors.accentArtiste,
+                      AppColors.accentArtiste.withOpacity(0.7),
+                    ],
+                  )
+                      : null,
                   color: isMax
-                      ? AppColors.accentArtiste
-                      : AppColors.violetSoft.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(6),
+                      ? null
+                      : AppColors.accentArtiste.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 jours[i],
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   color: isMax
                       ? AppColors.accentArtiste
                       : AppColors.textMuted,
-                  fontWeight:
-                  isMax ? FontWeight.w700 : FontWeight.w400,
+                  fontWeight: isMax ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ],
@@ -512,32 +567,34 @@ class _TitreCard extends StatelessWidget {
     final Color color = titre['color'] as Color;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border(
-          left: BorderSide(
-            color: publie ? AppColors.accentArtiste : AppColors.border,
-            width: 3,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-        ),
+        ],
       ),
       child: Row(
         children: [
           // Pochette
           Container(
-            width: 42,
-            height: 42,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color.withOpacity(0.4)),
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.35)),
             ),
-            child: Icon(Icons.music_note_rounded, color: color, size: 20),
+            child: Icon(Icons.music_note_rounded, color: color, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
           // Infos
           Expanded(
@@ -547,17 +604,17 @@ class _TitreCard extends StatelessWidget {
                 Text(
                   titre['titre'] as String,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Icon(
                       Icons.headphones_rounded,
-                      size: 12,
+                      size: 13,
                       color: publie
                           ? AppColors.accentArtiste
                           : AppColors.textMuted,
@@ -574,11 +631,22 @@ class _TitreCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      titre['genre'] as String,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.violetLight,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        titre['genre'] as String,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.violetMid,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
@@ -587,23 +655,22 @@ class _TitreCard extends StatelessWidget {
             ),
           ),
 
-          // Statut + menu
+          // Statut
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: publie
-                      ? AppColors.accentArtiste.withOpacity(0.1)
-                      : AppColors.border.withOpacity(0.5),
+                      ? AppColors.accentArtiste.withOpacity(0.12)
+                      : AppColors.border.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   publie ? 'Publié' : 'Masqué',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: publie
                         ? AppColors.accentArtiste
@@ -611,10 +678,10 @@ class _TitreCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               const Icon(
-                Icons.more_vert_rounded,
-                size: 18,
+                Icons.more_horiz_rounded,
+                size: 20,
                 color: AppColors.textMuted,
               ),
             ],
@@ -630,6 +697,8 @@ class _TitreCard extends StatelessWidget {
 
 // ─── BOTTOM NAV ARTISTE ──────────────────────────────────────────────────────
 class _ArtistBottomNav extends StatelessWidget {
+  const _ArtistBottomNav();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -638,13 +707,20 @@ class _ArtistBottomNav extends StatelessWidget {
         border: Border(
           top: BorderSide(color: AppColors.border, width: 0.8),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
+            children: const [
               _NavItem(
                 icon: Icons.bar_chart_rounded,
                 label: 'Stats',
@@ -688,28 +764,30 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: navigation selon l'onglet
+        // TODO: navigation
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isActive ? AppColors.accentArtiste : AppColors.textMuted,
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight:
-              isActive ? FontWeight.w600 : FontWeight.w400,
-              color:
-              isActive ? AppColors.accentArtiste : AppColors.textMuted,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isActive ? AppColors.accentArtiste : AppColors.textMuted,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? AppColors.accentArtiste : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

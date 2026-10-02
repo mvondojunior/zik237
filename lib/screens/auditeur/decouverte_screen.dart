@@ -1,3 +1,5 @@
+import 'package:app_mobile_music_underground/screens/auditeur/profil_screen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/recherche_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
@@ -5,8 +7,6 @@ import 'package:app_mobile_music_underground/services/auth_service.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
 
 /// Écran de découverte — Zik237 (Auditeur)
-/// Affiche le fil de titres triés par score de découverte,
-/// filtrables par ville et genre local.
 
 class DecouverteScreen extends StatefulWidget {
   const DecouverteScreen({super.key});
@@ -117,11 +117,9 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
-              // Header
               SliverToBoxAdapter(
                 child: _DecouverteHeader(onSignOut: _handleSignOut),
               ),
-
               // Filtres Ville
               SliverToBoxAdapter(
                 child: _FiltreChips(
@@ -134,7 +132,6 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
                   },
                 ),
               ),
-
               // Filtres Genre
               SliverToBoxAdapter(
                 child: _FiltreChips(
@@ -148,24 +145,22 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
                   isGenre: true,
                 ),
               ),
-
-              // Titre de section
+              // Titre section
               const SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
+                  padding: EdgeInsets.fromLTRB(20, 22, 20, 14),
                   child: Text(
                     'En ce moment',
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
-                      letterSpacing: -0.3,
+                      letterSpacing: -0.4,
                     ),
                   ),
                 ),
               ),
-
-              // Liste des titres
+              // Liste
               _isLoading
                   ? const SliverFillRemaining(
                 child: Center(
@@ -221,7 +216,7 @@ class _DecouverteHeader extends StatelessWidget {
     final nom = user?.userMetadata?['nom_affichage'] ?? 'Auditeur';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+      padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
       child: Row(
         children: [
           Expanded(
@@ -251,9 +246,11 @@ class _DecouverteHeader extends StatelessWidget {
           ),
           // Recherche
           Container(
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.border),
             ),
             child: IconButton(
@@ -272,8 +269,8 @@ class _DecouverteHeader extends StatelessWidget {
           GestureDetector(
             onTap: onSignOut,
             child: Container(
-              width: 42,
-              height: 42,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [AppColors.violetDark, Color(0xFF5B2C8A)],
@@ -281,8 +278,8 @@ class _DecouverteHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.violetDark.withOpacity(0.25),
-                    blurRadius: 10,
+                    color: AppColors.violetDark.withOpacity(0.28),
+                    blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
@@ -320,14 +317,14 @@ class _FiltreChips extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(20, isGenre ? 14 : 6, 20, 8),
+          padding: EdgeInsets.fromLTRB(20, isGenre ? 16 : 8, 20, 8),
           child: Text(
             isGenre ? 'Genre' : 'Ville',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
-              letterSpacing: 0.3,
+              letterSpacing: 0.4,
             ),
           ),
         ),
@@ -430,7 +427,7 @@ class _TitreCard extends StatelessWidget {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -453,9 +450,7 @@ class _TitreCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: couleur.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: couleur.withOpacity(0.35),
-                ),
+                border: Border.all(color: couleur.withOpacity(0.35)),
               ),
               child: titre['pochette_url'] != null
                   ? ClipRRect(
@@ -504,7 +499,7 @@ class _TitreCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 7),
                   Row(
                     children: [
                       Container(
@@ -620,60 +615,65 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColors.violetLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.music_off_rounded,
-              size: 40,
-              color: AppColors.violetMid,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Aucun titre trouvé',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Essaie un autre filtre ou reviens plus tard',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.violetDark,
-            ),
-            child: const Text(
-              'Réessayer',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: AppColors.violetLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.music_off_rounded,
+                size: 42,
+                color: AppColors.violetMid,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 22),
+            const Text(
+              'Aucun titre trouvé',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Essaie un autre filtre ou reviens plus tard',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.violetDark,
+              ),
+              child: const Text(
+                'Réessayer',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ─── BOTTOM NAV AUDITEUR ─────────────────────────────────────────────────────
+// ─── BOTTOM NAV ──────────────────────────────────────────────────────────────
 class _AuditeurBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -693,7 +693,7 @@ class _AuditeurBottomNav extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.violetDark.withOpacity(0.06),
+            color: AppColors.violetDark.withOpacity(0.05),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -701,7 +701,7 @@ class _AuditeurBottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -717,7 +717,11 @@ class _AuditeurBottomNav extends StatelessWidget {
                 isActive: currentIndex == 1,
                 onTap: () {
                   onTap(1);
-                  // TODO: navigation vers RechercheScreen
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RechercheScreen(),
+                      ),
+                  );
                 },
               ),
               _NavItem(
@@ -726,7 +730,7 @@ class _AuditeurBottomNav extends StatelessWidget {
                 isActive: currentIndex == 2,
                 onTap: () {
                   onTap(2);
-                  // TODO: navigation vers PlaylistScreen
+                  // TODO: PlaylistScreen
                 },
               ),
               _NavItem(
@@ -735,7 +739,11 @@ class _AuditeurBottomNav extends StatelessWidget {
                 isActive: currentIndex == 3,
                 onTap: () {
                   onTap(3);
-                  // TODO: navigation vers ProfilScreen
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProfilScreen(),
+                    ),
+                  );
                 },
               ),
             ],
@@ -764,8 +772,7 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,

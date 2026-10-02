@@ -9,14 +9,14 @@ import 'package:app_mobile_music_underground/services/auth_service.dart';
 /// Affiche et permet de modifier les informations du compte connecté.
 /// Fonctionne pour les deux rôles : Auditeur et Artiste.
 
-class ProfilArtisteScreen extends StatefulWidget {
-  const ProfilArtisteScreen({super.key});
+class ProfilScreen extends StatefulWidget {
+  const ProfilScreen({super.key});
 
   @override
-  State<ProfilArtisteScreen> createState() => _ProfilScreenState();
+  State<ProfilScreen> createState() => _ProfilScreenState();
 }
 
-class _ProfilScreenState extends State<ProfilArtisteScreen> {
+class _ProfilScreenState extends State<ProfilScreen> {
   final _supabase = Supabase.instance.client;
   final _authService = AuthService();
 

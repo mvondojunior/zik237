@@ -5,8 +5,6 @@ import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/core/app_button.dart';
 
 /// Écran lecteur audio — Zik237 (Auditeur)
-/// Lecture streaming depuis Supabase Storage via just_audio.
-/// Gère : lecture/pause, progression, volume, pourboire.
 
 class LecteurScreen extends StatefulWidget {
   final Map<String, dynamic> titre;
@@ -29,7 +27,6 @@ class _LecteurScreenState extends State<LecteurScreen>
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
-  // Montants pourboire disponibles
   final List<int> _montants = [100, 250, 500, 1000];
 
   @override
@@ -37,8 +34,8 @@ class _LecteurScreenState extends State<LecteurScreen>
     super.initState();
     _rotationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
+      duration: const Duration(seconds: 10),
+    );
     _initPlayer();
     _enregistrerEcoute();
   }
@@ -50,7 +47,6 @@ class _LecteurScreenState extends State<LecteurScreen>
     super.dispose();
   }
 
-  // ── Initialiser le lecteur ────────────────────────────────────────────────
   Future<void> _initPlayer() async {
     try {
       final audioUrl = widget.titre['audio_url'] as String?;
@@ -58,19 +54,16 @@ class _LecteurScreenState extends State<LecteurScreen>
 
       await _player.setUrl(audioUrl);
 
-      // Écoute de la progression
       _player.positionStream.listen((position) {
         if (mounted) setState(() => _position = position);
       });
 
-      // Écoute de la durée totale
       _player.durationStream.listen((duration) {
         if (mounted && duration != null) {
           setState(() => _duration = duration);
         }
       });
 
-      // Écoute état lecture
       _player.playingStream.listen((playing) {
         if (mounted) {
           setState(() => _isPlaying = playing);
@@ -90,7 +83,6 @@ class _LecteurScreenState extends State<LecteurScreen>
     }
   }
 
-  // ── Enregistrer l'écoute en base ─────────────────────────────────────────
   Future<void> _enregistrerEcoute() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
@@ -99,15 +91,12 @@ class _LecteurScreenState extends State<LecteurScreen>
       await _supabase.from('ecoutes').insert({
         'titre_id': widget.titre['id'],
         'auditeur_id': userId,
-        'ville_auditeur': null, // TODO: récupérer la ville de l'utilisateur
+        'ville_auditeur': null,
         'completed': false,
       });
-    } catch (_) {
-      // Silencieux — une écoute manquée n'est pas critique
-    }
+    } catch (_) {}
   }
 
-  // ── Lecture / Pause ───────────────────────────────────────────────────────
   Future<void> _togglePlay() async {
     if (_isPlaying) {
       await _player.pause();
@@ -116,7 +105,6 @@ class _LecteurScreenState extends State<LecteurScreen>
     }
   }
 
-  // ── Seek (déplacer la progression) ───────────────────────────────────────
   Future<void> _seekTo(double value) async {
     final position = Duration(
       milliseconds: (value * _duration.inMilliseconds).toInt(),
@@ -124,7 +112,6 @@ class _LecteurScreenState extends State<LecteurScreen>
     await _player.seek(position);
   }
 
-  // ── Afficher le sheet de pourboire ────────────────────────────────────────
   void _showPourboireSheet() {
     showModalBottomSheet(
       context: context,
@@ -135,8 +122,7 @@ class _LecteurScreenState extends State<LecteurScreen>
         montants: _montants,
         onEnvoyer: (montant) {
           Navigator.of(context).pop();
-          // TODO: navigation vers PourboreScreen avec montant et artiste
-          _showSnackBar('Pourboire de $montant FCFA envoyé ! 💰');
+          _showSnackBar('Pourboire de $montant FCFA envoyé !');
         },
       ),
     );
@@ -149,13 +135,12 @@ class _LecteurScreenState extends State<LecteurScreen>
         backgroundColor: AppColors.violetDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
   }
 
-  // ── Formater la durée ─────────────────────────────────────────────────────
   String _formatDuration(Duration d) {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
@@ -164,8 +149,7 @@ class _LecteurScreenState extends State<LecteurScreen>
 
   @override
   Widget build(BuildContext context) {
-    final artiste =
-    widget.titre['utilisateurs'] as Map<String, dynamic>?;
+    final artiste = widget.titre['utilisateurs'] as Map<String, dynamic>?;
     final nomArtiste = artiste?['nom_affichage'] ?? 'Artiste inconnu';
     final titreName = widget.titre['titre'] as String? ?? '';
     final genre = widget.titre['genre_principal'] as String? ?? '';
@@ -181,7 +165,7 @@ class _LecteurScreenState extends State<LecteurScreen>
           children: [
             // ── HEADER ──────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -190,46 +174,48 @@ class _LecteurScreenState extends State<LecteurScreen>
                     icon: const Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: AppColors.textSecondary,
-                      size: 28,
+                      size: 30,
                     ),
                   ),
                   Column(
                     children: [
                       const Text(
-                        'En écoute',
+                        'EN ÉCOUTE',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: AppColors.textMuted,
-                          letterSpacing: 0.5,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         genre,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.violetMid,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                   IconButton(
                     onPressed: () {
-                      // TODO: menu options (partager, ajouter à playlist...)
+                      // TODO: menu options
                     },
                     icon: const Icon(
-                      Icons.more_vert_rounded,
+                      Icons.more_horiz_rounded,
                       color: AppColors.textSecondary,
-                      size: 24,
+                      size: 26,
                     ),
                   ),
                 ],
               ),
             ),
 
-            // ── POCHETTE ANIMÉE ──────────────────────────────────────
+            // ── POCHETTE ────────────────────────────────────────────
             Expanded(
-              flex: 4,
+              flex: 5,
               child: Center(
                 child: AnimatedBuilder(
                   animation: _rotationController,
@@ -240,15 +226,15 @@ class _LecteurScreenState extends State<LecteurScreen>
                     child: child,
                   ),
                   child: Container(
-                    width: 220,
-                    height: 220,
+                    width: 240,
+                    height: 240,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.violetDark.withOpacity(0.3),
-                          blurRadius: 30,
-                          spreadRadius: 5,
+                          color: AppColors.violetDark.withOpacity(0.35),
+                          blurRadius: 40,
+                          spreadRadius: 8,
                         ),
                       ],
                     ),
@@ -258,21 +244,19 @@ class _LecteurScreenState extends State<LecteurScreen>
                         widget.titre['pochette_url'],
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) =>
-                            _DefaultPochette(),
+                        const _DefaultPochette(),
                       )
-                          : _DefaultPochette(),
+                          : const _DefaultPochette(),
                     ),
                   ),
                 ),
               ),
             ),
 
-            // ── INFOS TITRE ──────────────────────────────────────────
+            // ── INFOS TITRE ─────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              padding: const EdgeInsets.fromLTRB(28, 8, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -281,7 +265,7 @@ class _LecteurScreenState extends State<LecteurScreen>
                         Text(
                           titreName,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                             letterSpacing: -0.5,
@@ -289,54 +273,49 @@ class _LecteurScreenState extends State<LecteurScreen>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Text(
                           '$nomArtiste${ville.isNotEmpty ? ' · $ville' : ''}',
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // Bouton like
                   IconButton(
-                    onPressed: () =>
-                        setState(() => _isLiked = !_isLiked),
+                    onPressed: () => setState(() => _isLiked = !_isLiked),
                     icon: Icon(
                       _isLiked
                           ? Icons.favorite_rounded
                           : Icons.favorite_border_rounded,
-                      color: _isLiked
-                          ? AppColors.error
-                          : AppColors.textMuted,
-                      size: 26,
+                      color: _isLiked ? AppColors.error : AppColors.textMuted,
+                      size: 28,
                     ),
                   ),
                 ],
               ),
             ),
 
-            // ── BARRE DE PROGRESSION ─────────────────────────────────
+            // ── PROGRESSION ─────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               child: Column(
                 children: [
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3,
+                      trackHeight: 3.5,
                       thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 6,
+                        enabledThumbRadius: 7,
                       ),
                       overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 14,
+                        overlayRadius: 16,
                       ),
                       activeTrackColor: AppColors.violetDark,
                       inactiveTrackColor: AppColors.border,
                       thumbColor: AppColors.violetDark,
-                      overlayColor:
-                      AppColors.violetDark.withOpacity(0.1),
+                      overlayColor: AppColors.violetDark.withOpacity(0.15),
                     ),
                     child: Slider(
                       value: progress.clamp(0.0, 1.0),
@@ -344,17 +323,16 @@ class _LecteurScreenState extends State<LecteurScreen>
                     ),
                   ),
                   Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           _formatDuration(_position),
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textMuted,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
@@ -362,6 +340,7 @@ class _LecteurScreenState extends State<LecteurScreen>
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textMuted,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -371,13 +350,12 @@ class _LecteurScreenState extends State<LecteurScreen>
               ),
             ),
 
-            // ── CONTRÔLES ────────────────────────────────────────────
+            // ── CONTRÔLES ───────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Shuffle
                   IconButton(
                     onPressed: () {},
                     icon: const Icon(
@@ -386,7 +364,6 @@ class _LecteurScreenState extends State<LecteurScreen>
                       size: 22,
                     ),
                   ),
-                  // Précédent
                   IconButton(
                     onPressed: () async {
                       await _player.seek(Duration.zero);
@@ -394,33 +371,37 @@ class _LecteurScreenState extends State<LecteurScreen>
                     icon: const Icon(
                       Icons.skip_previous_rounded,
                       color: AppColors.textPrimary,
-                      size: 36,
+                      size: 38,
                     ),
                   ),
                   // Play / Pause
                   GestureDetector(
                     onTap: _isLoading ? null : _togglePlay,
                     child: Container(
-                      width: 64,
-                      height: 64,
+                      width: 68,
+                      height: 68,
                       decoration: BoxDecoration(
-                        color: AppColors.violetDark,
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppColors.violetDark,
+                            Color(0xFF5B2C8A),
+                          ],
+                        ),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                            AppColors.violetDark.withOpacity(0.4),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
+                            color: AppColors.violetDark.withOpacity(0.4),
+                            blurRadius: 18,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
                       child: _isLoading
                           ? const Padding(
-                        padding: EdgeInsets.all(18),
+                        padding: EdgeInsets.all(20),
                         child: CircularProgressIndicator(
                           color: Colors.white,
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                         ),
                       )
                           : Icon(
@@ -428,11 +409,10 @@ class _LecteurScreenState extends State<LecteurScreen>
                             ? Icons.pause_rounded
                             : Icons.play_arrow_rounded,
                         color: Colors.white,
-                        size: 32,
+                        size: 34,
                       ),
                     ),
                   ),
-                  // Suivant
                   IconButton(
                     onPressed: () async {
                       await _player.seek(_duration);
@@ -440,10 +420,9 @@ class _LecteurScreenState extends State<LecteurScreen>
                     icon: const Icon(
                       Icons.skip_next_rounded,
                       color: AppColors.textPrimary,
-                      size: 36,
+                      size: 38,
                     ),
                   ),
-                  // Repeat
                   IconButton(
                     onPressed: () async {
                       await _player.setLoopMode(
@@ -462,49 +441,53 @@ class _LecteurScreenState extends State<LecteurScreen>
               ),
             ),
 
-            // ── BOUTON POURBOIRE ─────────────────────────────────────
-            Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: _showPourboireSheet,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
+            // ── POURBOIRE ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              child: GestureDetector(
+                onTap: _showPourboireSheet,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
+                          color: AppColors.violetDark.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                        child: Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.account_balance_wallet_rounded,
-                              size: 18,
-                              color: AppColors.violetMid,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Soutenir $nomArtiste',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          size: 16,
+                          color: AppColors.violetDark,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        'Soutenir $nomArtiste',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -517,6 +500,8 @@ class _LecteurScreenState extends State<LecteurScreen>
 
 // ─── POCHETTE PAR DÉFAUT ──────────────────────────────────────────────────────
 class _DefaultPochette extends StatelessWidget {
+  const _DefaultPochette();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -557,15 +542,14 @@ class _PourboireSheetState extends State<_PourboireSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final nomArtiste =
-        widget.artiste?['nom_affichage'] ?? 'l\'artiste';
+    final nomArtiste = widget.artiste?['nom_affichage'] ?? 'l\'artiste';
 
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 36),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -578,13 +562,12 @@ class _PourboireSheetState extends State<_PourboireSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
-          // Titre
           Text(
             'Soutenir $nomArtiste',
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 19,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
@@ -597,7 +580,7 @@ class _PourboireSheetState extends State<_PourboireSheet> {
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
           // Montants
           Row(
@@ -611,25 +594,35 @@ class _PourboireSheetState extends State<_PourboireSheet> {
                         setState(() => _montantSelectionne = montant),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.violetDark
                             : AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: isSelected
                               ? AppColors.violetDark
                               : AppColors.border,
-                          width: isSelected ? 1.5 : 1.0,
+                          width: isSelected ? 1.5 : 1,
                         ),
+                        boxShadow: isSelected
+                            ? [
+                          BoxShadow(
+                            color:
+                            AppColors.violetDark.withOpacity(0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                            : null,
                       ),
                       child: Text(
                         '$montant',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: isSelected
                               ? Colors.white
                               : AppColors.textPrimary,
@@ -641,19 +634,17 @@ class _PourboireSheetState extends State<_PourboireSheet> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Note commission
-          Text(
+          const Text(
             '10% de commission prélevée par Zik237',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               color: AppColors.textMuted,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
-          // Bouton envoyer
           AppPrimaryButton(
             label: _montantSelectionne != null
                 ? 'Envoyer $_montantSelectionne FCFA via MoMo'

@@ -3,15 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Service d'authentification — Zik237
 /// Gère toutes les interactions avec Supabase Auth :
 /// inscription, connexion, déconnexion, reset mot de passe.
-///
-/// Usage depuis n'importe quel écran :
-/// ```dart
-/// final authService = AuthService();
-/// await authService.signIn(email: 'email', password: 'mdp');
-/// ```
 
 class AuthService {
-  // Client Supabase global (initialisé dans main.dart)
   final _supabase = Supabase.instance.client;
 
   // ── Utilisateur courant ────────────────────────────────────────────────
@@ -23,10 +16,6 @@ class AuthService {
   // INSCRIPTION
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Crée un compte avec email + mot de passe.
-  /// Insère aussi le profil dans la table `utilisateurs`.
-  ///
-  /// Retourne null si succès, un message d'erreur sinon.
   Future<String?> signUp({
     required String email,
     required String password,
@@ -51,8 +40,8 @@ class AuthService {
 
       final user = response.user!;
 
-      // Création immédiate du profil
-      await _supabase.from('utilisateurs').insert({
+      // Upsert = insert si n'existe pas, update sinon
+      await _supabase.from('utilisateurs').upsert({
         'id': user.id,
         'email': user.email,
         'nom_affichage': nomAffichage,
@@ -61,9 +50,8 @@ class AuthService {
         'verifie': true,
       });
 
-      // Si artiste → créer aussi le profil artiste
       if (role == 'artiste') {
-        await _supabase.from('profils_artiste').insert({
+        await _supabase.from('profils_artiste').upsert({
           'id': user.id,
         });
       }
@@ -81,8 +69,6 @@ class AuthService {
   // CONNEXION
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Connecte un utilisateur avec email + mot de passe.
-  /// Retourne null si succès, un message d'erreur sinon.
   Future<String?> signIn({
     required String email,
     required String password,
@@ -104,17 +90,13 @@ class AuthService {
   // MOT DE PASSE OUBLIÉ
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Envoie un email de réinitialisation du mot de passe.
-  /// Retourne null si succès, un message d'erreur sinon.
   Future<String?> resetPassword({required String email}) async {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
         redirectTo: 'zik237://reset-password',
-        // redirectTo = deep link vers ton app Flutter
-        // À configurer dans Supabase Dashboard → Auth → URL Configuration
       );
-      return null; // succès
+      return null;
     } on AuthException catch (e) {
       return _handleAuthError(e.message);
     } catch (e) {
@@ -126,14 +108,12 @@ class AuthService {
   // METTRE À JOUR LE MOT DE PASSE
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Met à jour le mot de passe après réinitialisation.
-  /// Retourne null si succès, un message d'erreur sinon.
   Future<String?> updatePassword({required String newPassword}) async {
     try {
       await _supabase.auth.updateUser(
         UserAttributes(password: newPassword),
       );
-      return null; // succès
+      return null;
     } on AuthException catch (e) {
       return _handleAuthError(e.message);
     } catch (e) {
@@ -142,11 +122,9 @@ class AuthService {
   }
 
   // ────────────────────────────────────────────────────────────────────────
-  // CONNEXION GOOGLE (OAuth)
+  // CONNEXION GOOGLE
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Lance le flux OAuth Google.
-  /// Retourne null si succès, un message d'erreur sinon.
   Future<String?> signInWithGoogle() async {
     try {
       await _supabase.auth.signInWithOAuth(
@@ -162,11 +140,9 @@ class AuthService {
   }
 
   // ────────────────────────────────────────────────────────────────────────
-  // RÉCUPÉRER LE RÔLE DE L'UTILISATEUR
+  // RÉCUPÉRER LE RÔLE
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Retourne le rôle de l'utilisateur connecté ('auditeur' ou 'artiste').
-  /// Utile pour rediriger vers le bon écran après connexion.
   Future<String?> getUserRole() async {
     try {
       final userId = currentUser?.id;
@@ -188,7 +164,6 @@ class AuthService {
   // DÉCONNEXION
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Déconnecte l'utilisateur et efface la session locale.
   Future<void> signOut() async {
     await _supabase.auth.signOut();
   }
@@ -197,7 +172,6 @@ class AuthService {
   // GESTION DES ERREURS
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Traduit les messages d'erreur Supabase en français.
   String _handleAuthError(String message) {
     if (message.contains('Invalid login credentials')) {
       return 'Email ou mot de passe incorrect.';
