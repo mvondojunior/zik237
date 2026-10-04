@@ -1,7 +1,9 @@
+import 'package:app_mobile_music_underground/screens/auditeur/pourboire_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/pourboire_screen.dart';
 
 /// Écran profil artiste — Vue Auditeur — Zik237
 /// Affiche le profil public d'un artiste avec ses titres,
@@ -101,7 +103,11 @@ class _ProfilArtisteScreenState extends State<ProfilScreenForArtiste>
         onEnvoyer: (montant) {
           Navigator.of(context).pop();
           _showSnackBar('Pourboire de $montant FCFA envoyé ! 💰');
-          // TODO: navigation vers PourbireScreen avec montant
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => PourboireScreen(artiste: {},),
+            ),
+          );
         },
       ),
     );

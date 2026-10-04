@@ -1,3 +1,4 @@
+import 'package:app_mobile_music_underground/screens/artiste/playlist.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/profil_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/recherche_screen.dart';
 import 'package:flutter/material.dart';
@@ -730,7 +731,11 @@ class _AuditeurBottomNav extends StatelessWidget {
                 isActive: currentIndex == 2,
                 onTap: () {
                   onTap(2);
-                  // TODO: PlaylistScreen
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => Playlist(),
+                    ),
+                  );
                 },
               ),
               _NavItem(
