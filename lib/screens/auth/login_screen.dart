@@ -5,6 +5,8 @@ import 'package:app_mobile_music_underground/core/app_text_field.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
 import 'package:app_mobile_music_underground/screens/auth/register_screen.dart';
 import 'package:app_mobile_music_underground/screens/auth/forgot_password.dart';
+import 'package:app_mobile_music_underground/services/auth_service.dart';
+
 
 /// Écran de connexion — Zik237 (version améliorée)
 

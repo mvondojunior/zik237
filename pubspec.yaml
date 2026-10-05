@@ -47,6 +47,9 @@ dependencies:
   http: ^1.6.0
   intl: ^0.20.2
   flutter_native_splash: ^2.4.8
+  mockito: ^5.7.0
+  build_runner: ^2.15.1
+  mocktail: ^1.0.5
 
 dev_dependencies:
   flutter_test:

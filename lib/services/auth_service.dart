@@ -5,7 +5,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// inscription, connexion, déconnexion, reset mot de passe.
 
 class AuthService {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  // ← Ajoute juste ce constructeur
+  AuthService({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   // ── Utilisateur courant ────────────────────────────────────────────────
   User? get currentUser => _supabase.auth.currentUser;
