@@ -6,6 +6,10 @@
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+        <string>On a besoin d’accéder à ta galerie pour la pochette du titre.</string>
+        <key>NSAppleMusicUsageDescription</key>
+        <string>On a besoin d’accéder à tes fichiers audio pour publier un titre.</string>
 		<key>CFBundleDisplayName</key>
 		<string>App Mobile Music Underground</string>
 		<key>CFBundleExecutable</key>

@@ -12,6 +12,7 @@ import 'package:app_mobile_music_underground/screens/auth/forgot_password.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
 import 'package:app_mobile_music_underground/screens/artiste/profil_artiste_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/profil_screen.dart';
+import 'package:app_mobile_music_underground/screens/artiste/mes_titres_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/dashboardscreen': (context) => DashboardScreen(),
         '/profilartiste': (context) => ProfilArtisteScreen(),
         '/profilauditeur': (context) => ProfilScreen(),
+        '/mestitres' : (context) => MesTitresScreen(),
       },
     );
   }

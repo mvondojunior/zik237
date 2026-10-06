@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +11,7 @@ import 'package:app_mobile_music_underground/core/app_text_field.dart';
 /// Écran d'upload d'un titre — Zik237 (Artiste)
 /// Permet à l'artiste de publier un morceau avec :
 /// pochette, fichier audio, titre, genre (suggestion IA), ville.
+/// Couleur dominante : violet (cohérent avec le dashboard).
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -24,6 +26,8 @@ class _UploadScreenState extends State<UploadScreen> {
 
   File? _audioFile;
   File? _pochetteFile;
+  Uint8List? _audioBytes; // fallback si path null
+  Uint8List? _pochetteBytes;
   String? _audioFileName;
   String? _genreSelectionne;
   String? _genreIASuggestion;
@@ -34,13 +38,25 @@ class _UploadScreenState extends State<UploadScreen> {
   double _uploadProgress = 0.0;
 
   final List<String> _genres = [
-    'Trap 237', 'Bikutsi', 'Mbolé', 'Afro-drill',
-    'Afrobeats', 'Makossa', 'Gospel', 'Autre',
+    'Trap 237',
+    'Bikutsi',
+    'Mbolé',
+    'Afro-drill',
+    'Afrobeats',
+    'Makossa',
+    'Gospel',
+    'Autre',
   ];
 
   final List<String> _villes = [
-    'Yaoundé', 'Douala', 'Bafoussam', 'Bamenda',
-    'Garoua', 'Maroua', 'Ngaoundéré', 'Kribi',
+    'Yaoundé',
+    'Douala',
+    'Bafoussam',
+    'Bamenda',
+    'Garoua',
+    'Maroua',
+    'Ngaoundéré',
+    'Kribi',
   ];
 
   @override
@@ -50,34 +66,71 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   // ── Sélectionner le fichier audio ────────────────────────────────────────
-  // ── Sélectionner le fichier audio ────────────────────────────────────────
+  // Compatible file_picker ^12.1.1
   Future<void> _selectionnerAudio() async {
-    final PlatformFile? file = await FilePicker.pickFile(
-      type: FileType.audio,
-    );
+    try {
+      // FileType.audio échoue souvent sur Android → custom + extensions
+      final PlatformFile? file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'],
+      );
 
-    if (file != null && file.path != null) {
+      if (file == null) return; // utilisateur a annulé
+
+      // withData est déprécié en v12 → on lit les bytes explicitement
+      final bytes = await file.readAsBytes();
+
       setState(() {
-        _audioFile = File(file.path!);
         _audioFileName = file.name;
         _genreIASuggestion = null;
         _genreIAConfiance = null;
+        _audioBytes = bytes;
+
+        if (file.path != null) {
+          _audioFile = File(file.path!);
+        } else {
+          _audioFile = null; // on utilisera les bytes
+        }
       });
-      await _classifierGenreIA(_audioFile!);
+
+      // Analyse IA
+      if (_audioFile != null) {
+        await _classifierGenreIA(_audioFile!);
+      } else if (_audioBytes != null) {
+        setState(() {
+          _genreIASuggestion = 'Trap 237';
+          _genreIAConfiance = 0.80;
+          _genreSelectionne = _genreIASuggestion;
+        });
+      }
+    } catch (e) {
+      debugPrint('Erreur sélection audio: $e');
+      _showSnackBar('Impossible de sélectionner le fichier audio. Réessaie.');
     }
   }
+
   // ── Sélectionner la pochette ─────────────────────────────────────────────
   Future<void> _selectionnerPochette() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1000,
-      maxHeight: 1000,
-      imageQuality: 85,
-    );
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1000,
+        maxHeight: 1000,
+        imageQuality: 85,
+      );
 
-    if (image != null) {
-      setState(() => _pochetteFile = File(image.path));
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+
+      setState(() {
+        _pochetteBytes = bytes;
+        // path peut être temporaire sur Android 13+ → on garde aussi les bytes
+        _pochetteFile = File(image.path);
+      });
+    } catch (e) {
+      _showSnackBar('Impossible de sélectionner la pochette. Réessaie.');
     }
   }
 
@@ -87,21 +140,6 @@ class _UploadScreenState extends State<UploadScreen> {
 
     try {
       // TODO: remplacer par l'URL réelle de ton microservice FastAPI
-      // Exemple :
-      // final request = http.MultipartRequest(
-      //   'POST',
-      //   Uri.parse('https://ton-microservice.onrender.com/predict-genre'),
-      // );
-      // request.files.add(await http.MultipartFile.fromPath('file', audioFile.path));
-      // final response = await request.send();
-      // final body = await response.stream.bytesToString();
-      // final data = jsonDecode(body);
-      // setState(() {
-      //   _genreIASuggestion = data['genre_predit'];
-      //   _genreIAConfiance = data['confiance'];
-      //   _genreSelectionne = _genreIASuggestion;
-      // });
-
       // Simulation en attendant le microservice
       await Future.delayed(const Duration(seconds: 2));
       setState(() {
@@ -110,8 +148,8 @@ class _UploadScreenState extends State<UploadScreen> {
         _genreSelectionne = _genreIASuggestion;
       });
     } catch (e) {
-      // Si le microservice est indisponible → l'artiste choisit manuellement
-      _showSnackBar('Classification IA indisponible. Choisis le genre manuellement.');
+      _showSnackBar(
+          'Classification IA indisponible. Choisis le genre manuellement.');
     } finally {
       setState(() => _isAnalyzingIA = false);
     }
@@ -119,8 +157,8 @@ class _UploadScreenState extends State<UploadScreen> {
 
   // ── Publier le titre ─────────────────────────────────────────────────────
   Future<void> _publier() async {
-    // Validations
-    if (_audioFile == null) {
+    // On accepte soit un File, soit des bytes
+    if (_audioFile == null && _audioBytes == null) {
       _showSnackBar('Sélectionne un fichier audio');
       return;
     }
@@ -142,29 +180,60 @@ class _UploadScreenState extends State<UploadScreen> {
       final userId = _supabase.auth.currentUser!.id;
       final titreId = DateTime.now().millisecondsSinceEpoch.toString();
 
-      // 1. Upload fichier audio
+      // 1. Upload fichier audio (File ou bytes)
       setState(() => _uploadProgress = 0.1);
       final audioPath = 'audio/$userId/$titreId.mp3';
-      await _supabase.storage.from('audio').upload(
-        audioPath,
-        _audioFile!,
-        fileOptions: const FileOptions(contentType: 'audio/mpeg'),
-      );
+
+      if (_audioFile != null) {
+        await _supabase.storage.from('audio').upload(
+          audioPath,
+          _audioFile!,
+          fileOptions: const FileOptions(
+            contentType: 'audio/mpeg',
+            upsert: true,
+          ),
+        );
+      } else if (_audioBytes != null) {
+        await _supabase.storage.from('audio').uploadBinary(
+          audioPath,
+          _audioBytes!,
+          fileOptions: const FileOptions(
+            contentType: 'audio/mpeg',
+            upsert: true,
+          ),
+        );
+      }
+
       final audioUrl = _supabase.storage.from('audio').getPublicUrl(audioPath);
       setState(() => _uploadProgress = 0.5);
 
       // 2. Upload pochette (si sélectionnée)
       String? pochetteUrl;
-      if (_pochetteFile != null) {
+      if (_pochetteFile != null || _pochetteBytes != null) {
         final pochettePath = 'pochettes/$userId/$titreId.jpg';
-        await _supabase.storage.from('pochettes').upload(
-          pochettePath,
-          _pochetteFile!,
-          fileOptions: const FileOptions(contentType: 'image/jpeg'),
-        );
-        pochetteUrl = _supabase.storage
-            .from('pochettes')
-            .getPublicUrl(pochettePath);
+
+        if (_pochetteFile != null) {
+          await _supabase.storage.from('pochettes').upload(
+            pochettePath,
+            _pochetteFile!,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+        } else if (_pochetteBytes != null) {
+          await _supabase.storage.from('pochettes').uploadBinary(
+            pochettePath,
+            _pochetteBytes!,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+        }
+
+        pochetteUrl =
+            _supabase.storage.from('pochettes').getPublicUrl(pochettePath);
       }
       setState(() => _uploadProgress = 0.8);
 
@@ -190,6 +259,7 @@ class _UploadScreenState extends State<UploadScreen> {
       _showSnackBar('Titre publié avec succès ! 🎵');
       Navigator.of(context).pop();
     } catch (e) {
+      debugPrint('Erreur upload: $e');
       _showSnackBar('Erreur lors de la publication. Réessaie.');
     } finally {
       setState(() => _isLoading = false);
@@ -200,11 +270,12 @@ class _UploadScreenState extends State<UploadScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppColors.accentArtiste,
+        backgroundColor: AppColors.violetMid,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -215,6 +286,7 @@ class _UploadScreenState extends State<UploadScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
               // ── HEADER ──────────────────────────────────────────────
@@ -222,70 +294,73 @@ class _UploadScreenState extends State<UploadScreen> {
 
               // ── FORMULAIRE ──────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // ── POCHETTE ──
-                    const AppInputLabel(label: 'Pochette du titre'),
-                    const SizedBox(height: 8),
+                    const _SectionLabel(label: 'Pochette du titre'),
+                    const SizedBox(height: 10),
                     _PochetteSelector(
                       file: _pochetteFile,
                       onTap: _selectionnerPochette,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // ── FICHIER AUDIO ──
-                    const AppInputLabel(label: 'Fichier audio'),
-                    const SizedBox(height: 8),
+                    const _SectionLabel(label: 'Fichier audio'),
+                    const SizedBox(height: 10),
                     _AudioSelector(
                       fileName: _audioFileName,
                       isAnalyzing: _isAnalyzingIA,
                       onTap: _selectionnerAudio,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // ── NOM DU TITRE ──
-                    const AppInputLabel(label: 'Titre du morceau'),
-                    const SizedBox(height: 8),
+                    const _SectionLabel(label: 'Titre du morceau'),
+                    const SizedBox(height: 10),
                     AppTextField(
                       controller: _titreController,
                       hint: 'Ex: Nuit Blanche',
                       icon: Icons.title_rounded,
                       isFocused: true,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // ── GENRE (avec suggestion IA) ──
                     Row(
                       children: [
-                        const AppInputLabel(label: 'Genre'),
+                        const _SectionLabel(label: 'Genre'),
                         if (_genreIASuggestion != null) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                              horizontal: 10,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.violetLight,
-                              borderRadius: BorderRadius.circular(6),
+                              color: AppColors.violetMid.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.violetMid.withOpacity(0.3),
+                              ),
                             ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
                                   Icons.auto_awesome_rounded,
-                                  size: 11,
+                                  size: 12,
                                   color: AppColors.violetMid,
                                 ),
-                                const SizedBox(width: 3),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Suggestion IA · ${(_genreIAConfiance! * 100).toInt()}%',
+                                  'IA · ${(_genreIAConfiance! * 100).toInt()}%',
                                   style: const TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     color: AppColors.violetMid,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -294,24 +369,31 @@ class _UploadScreenState extends State<UploadScreen> {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
 
                     // Chips de genre
                     _isAnalyzingIA
                         ? Container(
-                      height: 40,
-                      alignment: Alignment.centerLeft,
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.violetMid.withOpacity(0.3),
+                        ),
+                      ),
                       child: Row(
                         children: [
                           const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth: 2.2,
                               color: AppColors.violetMid,
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           const Text(
                             'Analyse IA en cours...',
                             style: TextStyle(
@@ -324,48 +406,61 @@ class _UploadScreenState extends State<UploadScreen> {
                       ),
                     )
                         : Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                      spacing: 10,
+                      runSpacing: 10,
                       children: _genres.map((genre) {
                         final isSelected = genre == _genreSelectionne;
                         final isIASuggestion =
                             genre == _genreIASuggestion;
                         return GestureDetector(
-                          onTap: () => setState(
-                                  () => _genreSelectionne = genre),
+                          onTap: () =>
+                              setState(() => _genreSelectionne = genre),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
+                              horizontal: 16,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.accentArtiste
+                                  ? AppColors.violetMid
                                   : isIASuggestion
-                                  ? AppColors.violetLight
+                                  ? AppColors.violetMid
+                                  .withOpacity(0.1)
                                   : AppColors.surface,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.accentArtiste
+                                    ? AppColors.violetMid
                                     : isIASuggestion
                                     ? AppColors.violetMid
+                                    .withOpacity(0.5)
                                     : AppColors.border,
                                 width: isSelected || isIASuggestion
                                     ? 1.5
                                     : 1.0,
                               ),
+                              boxShadow: isSelected
+                                  ? [
+                                BoxShadow(
+                                  color: AppColors.violetMid
+                                      .withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ]
+                                  : null,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (isIASuggestion && !isSelected)
                                   const Padding(
-                                    padding: EdgeInsets.only(right: 4),
+                                    padding: EdgeInsets.only(right: 5),
                                     child: Icon(
                                       Icons.auto_awesome_rounded,
-                                      size: 11,
+                                      size: 12,
                                       color: AppColors.violetMid,
                                     ),
                                   ),
@@ -375,7 +470,7 @@ class _UploadScreenState extends State<UploadScreen> {
                                     fontSize: 13,
                                     fontWeight: isSelected
                                         ? FontWeight.w600
-                                        : FontWeight.w400,
+                                        : FontWeight.w500,
                                     color: isSelected
                                         ? Colors.white
                                         : isIASuggestion
@@ -389,11 +484,11 @@ class _UploadScreenState extends State<UploadScreen> {
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // ── VILLE ──
-                    const AppInputLabel(label: 'Ville'),
-                    const SizedBox(height: 8),
+                    const _SectionLabel(label: 'Ville'),
+                    const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       value: _villeSelectionnee,
                       hint: const Text(
@@ -408,27 +503,33 @@ class _UploadScreenState extends State<UploadScreen> {
                         color: AppColors.textMuted,
                       ),
                       decoration: InputDecoration(
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.location_on_outlined,
-                          color: AppColors.textMuted,
+                          color: AppColors.violetMid.withOpacity(0.7),
                           size: 20,
                         ),
+                        filled: true,
+                        fillColor: AppColors.surface,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 14,
+                          vertical: 16,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(
+                            color: AppColors.border.withOpacity(0.8),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(
+                            color: AppColors.border.withOpacity(0.8),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(
-                            color: AppColors.borderFocused,
+                            color: AppColors.violetMid,
                             width: 1.5,
                           ),
                         ),
@@ -443,20 +544,21 @@ class _UploadScreenState extends State<UploadScreen> {
                       onChanged: (v) =>
                           setState(() => _villeSelectionnee = v),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 36),
 
                     // ── BARRE DE PROGRESSION ──
                     if (_isLoading) ...[
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         child: LinearProgressIndicator(
                           value: _uploadProgress,
-                          backgroundColor: AppColors.surface,
-                          color: AppColors.accentArtiste,
-                          minHeight: 6,
+                          backgroundColor:
+                          AppColors.violetMid.withOpacity(0.12),
+                          color: AppColors.violetMid,
+                          minHeight: 7,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Text(
                         _uploadProgress < 0.5
                             ? 'Upload audio...'
@@ -466,9 +568,10 @@ class _UploadScreenState extends State<UploadScreen> {
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                     ],
 
                     // ── BOUTON PUBLIER ──
@@ -476,29 +579,41 @@ class _UploadScreenState extends State<UploadScreen> {
                       label: 'Publier le titre',
                       isLoading: _isLoading,
                       onPressed: _publier,
-                      color: AppColors.accentArtiste,
+                      color: AppColors.violetMid,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
                     // Note sécurité
                     Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(
-                            Icons.shield_outlined,
-                            size: 13,
-                            color: AppColors.textMuted,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.border.withOpacity(0.6),
                           ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Publié via ton compte artiste vérifié',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textMuted,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.shield_outlined,
+                              size: 14,
+                              color: AppColors.violetMid.withOpacity(0.7),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Publié via ton compte artiste vérifié',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -512,6 +627,25 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 }
 
+// ─── SECTION LABEL ────────────────────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.2,
+      ),
+    );
+  }
+}
+
 // ─── HEADER ──────────────────────────────────────────────────────────────────
 class _UploadHeader extends StatelessWidget {
   final VoidCallback onBack;
@@ -520,21 +654,31 @@ class _UploadHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1E3A2F), AppColors.background],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.violetDark,
+            const Color(0xFF1A0F2E),
+          ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.violetDark.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      padding: const EdgeInsets.fromLTRB(8, 12, 16, 20),
       child: Row(
         children: [
           IconButton(
             onPressed: onBack,
             icon: const Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textSecondary,
+              color: Colors.white70,
               size: 20,
             ),
           ),
@@ -543,14 +687,14 @@ class _UploadHeader extends StatelessWidget {
               'Publier un titre',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-                letterSpacing: -0.3,
+                color: Colors.white,
+                letterSpacing: -0.4,
               ),
             ),
           ),
-          const SizedBox(width: 44), // équilibre avec le bouton retour
+          const SizedBox(width: 48), // équilibre avec le bouton retour
         ],
       ),
     );
@@ -568,18 +712,27 @@ class _PochetteSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 120,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 140,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: file != null
-                ? AppColors.accentArtiste
-                : AppColors.border,
-            width: file != null ? 1.5 : 1.0,
-            style: file != null ? BorderStyle.solid : BorderStyle.solid,
+                ? AppColors.violetMid
+                : AppColors.border.withOpacity(0.8),
+            width: file != null ? 1.8 : 1.2,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: file != null
+                  ? AppColors.violetMid.withOpacity(0.15)
+                  : Colors.black.withOpacity(0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
           image: file != null
               ? DecorationImage(
             image: FileImage(file!),
@@ -590,40 +743,56 @@ class _PochetteSelector extends StatelessWidget {
         child: file == null
             ? Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 32,
-              color: AppColors.textMuted,
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Ajouter une pochette',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textMuted,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.violetMid.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 26,
+                color: AppColors.violetMid,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 12),
+            const Text(
+              'Ajouter une pochette',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               'Optionnel — JPEG ou PNG',
               style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textMuted,
+                fontSize: 12,
+                color: AppColors.textMuted.withOpacity(0.9),
               ),
             ),
           ],
         )
             : Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: Colors.black38,
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withOpacity(0.45),
+              ],
+            ),
           ),
           child: const Center(
             child: Icon(
               Icons.edit_rounded,
               color: Colors.white,
-              size: 28,
+              size: 30,
             ),
           ),
         ),
@@ -650,37 +819,55 @@ class _AudioSelector extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: hasFile
-              ? AppColors.accentArtiste.withOpacity(0.08)
+              ? AppColors.violetMid.withOpacity(0.08)
               : AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: hasFile ? AppColors.accentArtiste : AppColors.border,
-            width: hasFile ? 1.5 : 1.0,
+            color: hasFile
+                ? AppColors.violetMid
+                : AppColors.border.withOpacity(0.8),
+            width: hasFile ? 1.6 : 1.2,
           ),
+          boxShadow: hasFile
+              ? [
+            BoxShadow(
+              color: AppColors.violetMid.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ]
+              : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: hasFile
-                    ? AppColors.accentArtiste.withOpacity(0.15)
-                    : AppColors.border.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
+                    ? AppColors.violetMid.withOpacity(0.15)
+                    : AppColors.violetMid.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 hasFile
                     ? Icons.audio_file_rounded
                     : Icons.upload_file_rounded,
                 color: hasFile
-                    ? AppColors.accentArtiste
-                    : AppColors.textMuted,
-                size: 22,
+                    ? AppColors.violetMid
+                    : AppColors.violetMid.withOpacity(0.6),
+                size: 24,
               ),
             ),
             const SizedBox(width: 14),
@@ -691,10 +878,9 @@ class _AudioSelector extends StatelessWidget {
                   Text(
                     hasFile ? fileName! : 'Sélectionner un fichier audio',
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: hasFile
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontSize: 14,
+                      fontWeight:
+                      hasFile ? FontWeight.w600 : FontWeight.w500,
                       color: hasFile
                           ? AppColors.textPrimary
                           : AppColors.textMuted,
@@ -702,7 +888,7 @@ class _AudioSelector extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     hasFile
                         ? isAnalyzing
@@ -710,31 +896,39 @@ class _AudioSelector extends StatelessWidget {
                         : 'MP3 · Appuie pour changer'
                         : 'MP3 ou WAV — max 50 Mo',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: hasFile
-                          ? AppColors.accentArtiste
+                          ? AppColors.violetMid
                           : AppColors.textMuted,
-                      fontStyle: isAnalyzing
-                          ? FontStyle.italic
-                          : FontStyle.normal,
+                      fontWeight: FontWeight.w500,
+                      fontStyle:
+                      isAnalyzing ? FontStyle.italic : FontStyle.normal,
                     ),
                   ),
                 ],
               ),
             ),
             if (hasFile && !isAnalyzing)
-              const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.accentArtiste,
-                size: 22,
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.violetMid.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: AppColors.violetMid,
+                  size: 18,
+                ),
               )
             else if (isAnalyzing)
               const SizedBox(
-                width: 20,
-                height: 20,
+                width: 22,
+                height: 22,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.accentArtiste,
+                  strokeWidth: 2.2,
+                  color: AppColors.violetMid,
                 ),
               ),
           ],
@@ -743,12 +937,3 @@ class _AudioSelector extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
