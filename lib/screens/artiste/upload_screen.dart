@@ -258,9 +258,14 @@ class _UploadScreenState extends State<UploadScreen> {
       if (!mounted) return;
       _showSnackBar('Titre publié avec succès ! 🎵');
       Navigator.of(context).pop();
-    } catch (e) {
-      debugPrint('Erreur upload: $e');
-      _showSnackBar('Erreur lors de la publication. Réessaie.');
+    } catch (e, stack) {
+      debugPrint('========== ERREUR PUBLICATION ==========');
+      debugPrint('Erreur: $e');
+      debugPrint('Stack: $stack');
+      debugPrint('========================================');
+
+      // Affiche l’erreur réelle à l’écran (temporaire pour debug)
+      _showSnackBar('Erreur: $e');
     } finally {
       setState(() => _isLoading = false);
     }
