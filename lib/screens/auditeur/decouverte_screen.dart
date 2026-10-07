@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
 import 'package:app_mobile_music_underground/services/auth_service.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/playlist_auditeur.dart';
 
 /// Écran de découverte — Zik237 (Auditeur)
 
@@ -733,7 +734,7 @@ class _AuditeurBottomNav extends StatelessWidget {
                   onTap(2);
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => Playlist(),
+                      builder: (_) => PlaylistAuditeur(),
                     ),
                   );
                 },

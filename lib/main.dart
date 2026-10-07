@@ -1,3 +1,4 @@
+import 'package:app_mobile_music_underground/screens/auditeur/playlist_auditeur.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/profil_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/recherche_screen.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dar
 import 'package:app_mobile_music_underground/screens/artiste/profil_artiste_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/profil_screen.dart';
 import 'package:app_mobile_music_underground/screens/artiste/mes_titres_screen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,7 @@ class MyApp extends StatelessWidget {
         '/profilartiste': (context) => ProfilArtisteScreen(),
         '/profilauditeur': (context) => ProfilScreen(),
         '/mestitres' : (context) => MesTitresScreen(),
+        '/playlistauditeur' : (context) =>PlaylistAuditeur(),
       },
     );
   }
