@@ -1,6 +1,9 @@
+import 'package:app_mobile_music_underground/screens/auditeur/lecteur_screen.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/profil_screen_for_artiste.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/profil_screen_for_artiste.dart';
 
 /// Écran de recherche — Zik237 (Auditeur)
 
@@ -475,7 +478,11 @@ class _TitreResultCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // TODO: navigation vers LecteurScreen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LecteurScreen(titre: titre),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -596,8 +603,15 @@ class _ArtisteResultCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // TODO: navigation vers ProfilArtisteScreen
-      },
+        onTap: () {
+          final artisteId = artiste['id'] as String; // ou int selon ton type
+
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ProfilScreenForArtiste(artisteId: artisteId),
+            ),
+          );
+        };
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -687,10 +701,10 @@ class _ArtisteResultCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+        );
   }
-
+    );
+        }
   String _formatNumber(int n) {
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
     return n.toString();

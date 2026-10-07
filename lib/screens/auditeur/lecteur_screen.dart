@@ -1,3 +1,5 @@
+import 'package:app_mobile_music_underground/screens/auditeur/playlist_auditeur.dart';
+import 'package:app_mobile_music_underground/screens/auditeur/profil_screen_for_artiste.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,7 +41,58 @@ class _LecteurScreenState extends State<LecteurScreen>
     _initPlayer();
     _enregistrerEcoute();
   }
-
+  void _showSignalerDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Signaler ce titre',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: const Text(
+          'Ce titre contient du contenu inapproprié ?',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Annuler',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Titre signalé. Merci !'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            },
+            child: const Text(
+              'Signaler',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   @override
   void dispose() {
     _rotationController.dispose();
@@ -199,15 +252,97 @@ class _LecteurScreenState extends State<LecteurScreen>
                       ),
                     ],
                   ),
-                  IconButton(
-                    onPressed: () {
-                      // TODO: menu options
-                    },
+                  PopupMenuButton<String>(
                     icon: const Icon(
-                      Icons.more_horiz_rounded,
+                      Icons.more_vert_rounded,
                       color: AppColors.textSecondary,
-                      size: 26,
+                      size: 24,
                     ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'playlist':
+                        // TODO: navigation vers PlaylistScreen pour ajouter
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => PlaylistAuditeur(),
+                          );
+                          break;
+                        case 'profil':
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ProfilScreenForArtiste(
+                                artisteId: widget.titre['utilisateurs']['id'],
+                              ),
+                            ),
+                          );
+                          break;
+                        case 'partager':
+                        // TODO: Share.share() avec le package share_plus
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Lien de partage copié !'),
+                              backgroundColor: AppColors.violetDark,
+                            ),
+                          );
+                          break;
+                        case 'signaler':
+                          _showSignalerDialog();
+                          break;
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'playlist',
+                        child: Row(
+                          children: [
+                            Icon(Icons.playlist_add_rounded,
+                                size: 20, color: AppColors.violetMid),
+                            SizedBox(width: 10),
+                            Text('Ajouter à une playlist'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'profil',
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_outline_rounded,
+                                size: 20, color: AppColors.violetMid),
+                            SizedBox(width: 10),
+                            Text('Voir le profil de l\'artiste'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'partager',
+                        child: Row(
+                          children: [
+                            Icon(Icons.share_rounded,
+                                size: 20, color: AppColors.violetMid),
+                            SizedBox(width: 10),
+                            Text('Partager le titre'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'signaler',
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined,
+                                size: 20, color: AppColors.error),
+                            SizedBox(width: 10),
+                            Text(
+                              'Signaler le titre',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

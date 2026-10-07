@@ -5,8 +5,9 @@ import 'package:app_mobile_music_underground/core/app_button.dart';
 import 'package:app_mobile_music_underground/screens/artiste/upload_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/decouverte_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/recherche_screen.dart';
-import 'package:app_mobile_music_underground/screens/auditeur/playlist_screen.dart';
+import 'package:app_mobile_music_underground/screens/artiste/playlist.dart';
 import 'package:app_mobile_music_underground/screens/artiste/profil_artiste_screen.dart';
+import 'package:app_mobile_music_underground/screens/artiste/pourboire_screen_artiste.dart';
 
 /// Dashboard Artiste — Zik237
 /// L'artiste est aussi un auditeur — il a accès aux deux modes.
@@ -310,7 +311,7 @@ class _AuditeurDashboardState extends State<_AuditeurDashboard> {
   final List<Widget> _screens = const [
     DecouverteScreen(),
     RechercheScreen(),
-    PlaylistScreen(),
+    Playlist(),
   ];
 
   @override
@@ -419,7 +420,7 @@ class _ArtisteHeader extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             AppColors.violetDark,
-            const Color(0xFF1A0F2E), // violet très sombre
+            const Color(0xFF1A0F2E),
           ],
         ),
         boxShadow: [
@@ -441,97 +442,119 @@ class _ArtisteHeader extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Badge mode artiste
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.violetMid.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.violetMid.withOpacity(0.4),
-                      ),
+                  // MENU DÉROULANT (haut à gauche)
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'auditeur') {
+                        onSwitchMode();
+                      }
+                    },
+                    offset: const Offset(0, 40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Text(
-                      'Mode Artiste',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.violetMid,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ),
-
-                  Row(
-                    children: [
-                      // Switcher mode auditeur
-                      GestureDetector(
-                        onTap: onSwitchMode,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
-                          ),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.headphones_rounded,
-                                  size: 14, color: Colors.white70),
-                              SizedBox(width: 5),
-                              Text(
-                                'Écouter',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                    color: AppColors.surface,
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'artiste',
+                        child: Row(
+                          children: [
+                            Icon(Icons.mic_rounded,
+                                size: 18, color: AppColors.violetMid),
+                            SizedBox(width: 10),
+                            Text(
+                              'Mode Artiste',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-
-                      if (estPremium) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.violetMid.withOpacity(0.3),
-                                AppColors.violetMid.withOpacity(0.15),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.violetMid.withOpacity(0.5),
-                            ),
-                          ),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.star_rounded,
-                                  size: 14, color: AppColors.violetMid),
-                              SizedBox(width: 5),
-                              Text(
-                                'Premium',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.violetMid,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                      const PopupMenuItem(
+                        value: 'auditeur',
+                        child: Row(
+                          children: [
+                            Icon(Icons.headphones_rounded,
+                                size: 18, color: AppColors.violetMid),
+                            SizedBox(width: 10),
+                            Text(
+                              'Mode Auditeur',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.violetMid.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.violetMid.withOpacity(0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.menu_rounded,
+                              size: 16, color: AppColors.violetMid),
+                          SizedBox(width: 6),
+                          Text(
+                            'Mode Artiste',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.violetMid,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.keyboard_arrow_down_rounded,
+                              size: 16, color: AppColors.violetMid),
+                        ],
+                      ),
+                    ),
                   ),
+
+                  // Badge Premium (si premium)
+                  if (estPremium)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.violetMid.withOpacity(0.3),
+                            AppColors.violetMid.withOpacity(0.15),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.violetMid.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.star_rounded,
+                              size: 14, color: AppColors.violetMid),
+                          SizedBox(width: 5),
+                          Text(
+                            'Premium',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.violetMid,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 24),

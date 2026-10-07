@@ -1,3 +1,5 @@
+import 'package:app_mobile_music_underground/screens/artiste/playlist.dart';
+import 'package:app_mobile_music_underground/screens/artiste/pourboire_screen_artiste.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/playlist_auditeur.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/profil_screen.dart';
 import 'package:app_mobile_music_underground/screens/auditeur/recherche_screen.dart';
@@ -46,6 +48,7 @@ class MyApp extends StatelessWidget {
         '/profilauditeur': (context) => ProfilScreen(),
         '/mestitres' : (context) => MesTitresScreen(),
         '/playlistauditeur' : (context) =>PlaylistAuditeur(),
+        '/playlistartiste' : (context) => Playlist(),
       },
     );
   }
