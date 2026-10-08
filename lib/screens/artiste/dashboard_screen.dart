@@ -1,3 +1,4 @@
+import 'package:app_mobile_music_underground/screens/artiste/mes_titres_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_mobile_music_underground/core/app_colors.dart';
@@ -263,24 +264,38 @@ class _ArtisteDashboardState extends State<_ArtisteDashboard> {
         ),
       ),
 
-      // Bottom nav artiste
+      // Bottom nav artiste — routes à personnaliser
       bottomNavigationBar: _ArtisteBottomNav(
         currentIndex: _navIndex,
         onTap: (index) {
           setState(() => _navIndex = index);
           switch (index) {
             case 0:
-              break; // déjà sur le dashboard
+            // Déjà sur le dashboard (Stats)
+              break;
             case 1:
-              Navigator.of(context).pushNamed('/mestitres');
+            // page Titres
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MesTitresScreen(),
+                ),
+              );
               break;
             case 2:
-              Navigator.of(context).pushNamed('/revenus');
+            // page pourboire
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>  PourboireScreenArtiste(artiste: {},),
+                ),
+              );
               break;
             case 3:
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfilArtisteScreen(),
-              ));
+            // page Profil
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ProfilArtisteScreen(),
+                ),
+              );
               break;
           }
         },
@@ -318,9 +333,10 @@ class _AuditeurDashboardState extends State<_AuditeurDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      // Bandeau mode auditeur en haut
+
+      // ── HEADER avec menu déroulant (comme en mode Artiste) ──────────────
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
+        preferredSize: const Size.fromHeight(56),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.violetDark,
@@ -338,42 +354,94 @@ class _AuditeurDashboardState extends State<_AuditeurDashboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Mode Auditeur',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
+                // MENU DÉROULANT (identique au mode Artiste)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'artiste') {
+                      widget.onSwitchMode();
+                    }
+                  },
+                  offset: const Offset(0, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                ),
-                GestureDetector(
-                  onTap: widget.onSwitchMode,
+                  color: AppColors.surface,
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'artiste',
+                      child: Row(
+                        children: [
+                          Icon(Icons.mic_rounded,
+                              size: 18, color: AppColors.violetMid),
+                          SizedBox(width: 10),
+                          Text(
+                            'Mode Artiste',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'auditeur',
+                      child: Row(
+                        children: [
+                          Icon(Icons.headphones_rounded,
+                              size: 18, color: AppColors.violetMid),
+                          SizedBox(width: 10),
+                          Text(
+                            'Mode Auditeur',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 6),
+                        horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: AppColors.violetMid.withOpacity(0.25),
+                      color: AppColors.violetMid.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: AppColors.violetMid.withOpacity(0.6),
+                        color: AppColors.violetMid.withOpacity(0.4),
                       ),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.mic_rounded,
-                            size: 14, color: AppColors.violetMid),
+                        Icon(Icons.menu_rounded,
+                            size: 16, color: AppColors.violetMid),
                         SizedBox(width: 6),
                         Text(
-                          'Mode Artiste',
+                          'Mode Auditeur',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.violetMid,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                        SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down_rounded,
+                            size: 16, color: AppColors.violetMid),
                       ],
                     ),
+                  ),
+                ),
+
+                // Titre discret à droite
+                const Text(
+                  'Zik237',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
@@ -388,7 +456,7 @@ class _AuditeurDashboardState extends State<_AuditeurDashboard> {
         children: _screens,
       ),
 
-      // Bottom nav auditeur
+      // ── UN SEUL Bottom Nav Auditeur ──────────────────────────────────────
       bottomNavigationBar: _AuditeurBottomNav(
         currentIndex: _navIndex,
         onTap: (index) => setState(() => _navIndex = index),
@@ -1113,7 +1181,7 @@ class _ArtisteBottomNav extends StatelessWidget {
   }
 }
 
-// ─── BOTTOM NAV AUDITEUR ──────────────────────────────────────────────────────
+// ─── BOTTOM NAV AUDITEUR (un seul) ────────────────────────────────────────────
 class _AuditeurBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;

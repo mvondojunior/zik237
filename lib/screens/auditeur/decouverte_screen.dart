@@ -57,13 +57,22 @@ class _DecouverteScreenState extends State<DecouverteScreen> {
       var query = _supabase
           .from('titres')
           .select('''
-            id, titre, audio_url, pochette_url,
-            genre_principal, ville, nb_ecoutes,
-            nb_ecoutes_7j, score_decouverte, publie,
-            utilisateurs!artiste_id (
-              id, nom_affichage, ville
-            )
-          ''')
+      id,
+      titre,
+      audio_url,
+      pochette_url,
+      genre_principal,
+      ville,
+      nb_ecoutes,
+      nb_ecoutes_7j,
+      score_decouverte,
+      publie,
+      utilisateurs!titres_artiste_id_fkey (
+        id,
+        nom_affichage,
+        ville
+      )
+    ''')
           .eq('publie', true);
 
       if (_selectedVille != null && _selectedVille != 'Toutes') {
